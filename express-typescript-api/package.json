@@ -9,7 +9,7 @@
         "dev": "npm run pre-dev | pino-pretty",
         "build": "rimraf dist && tsc --build",
         "test": "echo \"Error: no test specified\" && exit 1",
-        "lint": "npx eslint './src/**/*.{js,ts}'",
+        "lint": "npx eslint --fix './src/**/*.{js,ts}'",
         "check-types": "tsc --pretty --noEmit",
         "check-format": "prettier --check .",
         "check-lint": "eslint . --ext ts --ext js",

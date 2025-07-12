@@ -2,3 +2,4 @@
 /*lock*
 *.cert
 dist
+.env

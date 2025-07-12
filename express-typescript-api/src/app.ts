@@ -36,7 +36,7 @@ class App {
 
     private readonly initializeControllers = (controllers: Controller[]): void => {
         controllers.forEach((controller) => {
-            this.express.use(controller.path, controller.router)
+            this.express.use(`/api${String(controller.path)}`, controller.router)
         })
     }
 
