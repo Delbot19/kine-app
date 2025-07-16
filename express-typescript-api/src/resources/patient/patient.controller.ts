@@ -16,6 +16,9 @@ class PatientController {
 
     private initializeRoutes(): void {
         this.router.post('/', authMiddleware, zodValidator(createPatientSchema), this.createPatient)
+        this.router.get('/by-user/:userId', authMiddleware, this.getPatientByUserId)
+        this.router.get('/', authMiddleware, this.getAllPatients)
+        this.router.get('/search', authMiddleware, this.searchPatients)
         this.router.get('/:id', authMiddleware, this.getPatientById)
         this.router.put(
             '/:id',
@@ -118,6 +121,69 @@ class PatientController {
                         result,
                     ),
                 )
+        } catch (error) {
+            next(error)
+        }
+    }
+
+    private readonly getPatientByUserId = async (
+        req: Request,
+        res: Response,
+        next: NextFunction,
+    ): Promise<Response | void> => {
+        try {
+            const { userId } = req.params
+            const requesterId = (req as any).user?.userId || (req as any).user?._id
+            const role = (req as any).user?.role
+            const result = await this.patientService.getPatientByUserId(userId, requesterId, role)
+            if (result.success) {
+                return res.status(200).json(jsonResponse('Patient trouvé', true, result.patient))
+            }
+            return res
+                .status(404)
+                .json(jsonResponse(result.message ?? 'Patient non trouvé', false, result))
+        } catch (error) {
+            next(error)
+        }
+    }
+
+    private readonly getAllPatients = async (
+        req: Request,
+        res: Response,
+        next: NextFunction,
+    ): Promise<Response | void> => {
+        try {
+            const role = (req as any).user?.role
+            const result = await this.patientService.getAllPatients(role)
+            if (result.success) {
+                return res
+                    .status(200)
+                    .json(jsonResponse('Liste des patients', true, result.patient))
+            }
+            return res
+                .status(403)
+                .json(jsonResponse(result.message ?? 'Accès refusé', false, result))
+        } catch (error) {
+            next(error)
+        }
+    }
+
+    private readonly searchPatients = async (
+        req: Request,
+        res: Response,
+        next: NextFunction,
+    ): Promise<Response | void> => {
+        try {
+            const role = (req as any).user?.role
+            const result = await this.patientService.searchPatients(req.query, role)
+            if (result.success) {
+                return res
+                    .status(200)
+                    .json(jsonResponse('Résultats de la recherche', true, result.patient))
+            }
+            return res
+                .status(403)
+                .json(jsonResponse(result.message ?? 'Accès refusé', false, result))
         } catch (error) {
             next(error)
         }

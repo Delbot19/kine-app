@@ -70,4 +70,68 @@ export default class PatientService {
         await User.findByIdAndDelete(patient.userId)
         return { success: true, message: 'Patient et utilisateur supprimés.' }
     }
+
+    async getPatientByUserId(
+        userId: string,
+        requesterId: string,
+        role: string,
+    ): Promise<PatientServiceResult> {
+        const patient = await Patient.findOne({ userId }).populate('userId')
+        if (!patient) {
+            return { success: false, message: 'Patient non trouvé.' }
+        }
+        // Vérification d'accès : admin ou propriétaire
+        const userIdToCheck =
+            typeof patient.userId === 'object' && patient.userId !== null && '_id' in patient.userId
+                ? patient.userId._id
+                : patient.userId
+        if (role !== 'ADMIN' && String(userIdToCheck) !== String(requesterId)) {
+            return { success: false, message: 'Accès refusé.' }
+        }
+        return { success: true, message: 'Patient trouvé.', patient }
+    }
+
+    async getAllPatients(role: string): Promise<PatientServiceResult> {
+        if (role !== 'ADMIN') {
+            return { success: false, message: 'Accès refusé.' }
+        }
+        const patients = await Patient.find().populate('userId')
+        return { success: true, message: 'Liste des patients.', patient: patients }
+    }
+
+    async searchPatients(query: any, role: string): Promise<PatientServiceResult> {
+        if (role !== 'ADMIN') {
+            return { success: false, message: 'Accès refusé.' }
+        }
+        // Construction du filtre de recherche
+        const filter: any = {}
+        if (query.nom) {
+            filter['userId.nom'] = { $regex: query.nom, $options: 'i' }
+        }
+        if (query.email) {
+            filter['userId.email'] = { $regex: query.email, $options: 'i' }
+        }
+        if (query.telephone) {
+            filter.telephone = { $regex: query.telephone, $options: 'i' }
+        }
+        // On fait le populate puis le match côté JS (limitation de populate + regex)
+        const patients = await Patient.find().populate('userId')
+        const filtered = patients.filter((p: any) => {
+            let match = true
+            if (query.nom && !(p.userId?.nom ?? '').toLowerCase().includes(query.nom.toLowerCase()))
+                match = false
+            if (
+                query.email &&
+                !(p.userId?.email ?? '').toLowerCase().includes(query.email.toLowerCase())
+            )
+                match = false
+            if (
+                query.telephone &&
+                !(p.telephone ?? '').toLowerCase().includes(query.telephone.toLowerCase())
+            )
+                match = false
+            return match
+        })
+        return { success: true, message: 'Résultats de la recherche.', patient: filtered }
+    }
 }
