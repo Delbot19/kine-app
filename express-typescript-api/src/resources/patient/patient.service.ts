@@ -103,34 +103,12 @@ export default class PatientService {
         if (role !== 'ADMIN') {
             return { success: false, message: 'Accès refusé.' }
         }
-        // Construction du filtre de recherche
-        const filter: any = {}
-        if (query.nom) {
-            filter['userId.nom'] = { $regex: query.nom, $options: 'i' }
-        }
-        if (query.email) {
-            filter['userId.email'] = { $regex: query.email, $options: 'i' }
-        }
-        if (query.telephone) {
-            filter.telephone = { $regex: query.telephone, $options: 'i' }
-        }
-        // On fait le populate puis le match côté JS (limitation de populate + regex)
+        // Recherche uniquement par nom
+        const nom = query.nom ? query.nom.toLowerCase() : ''
         const patients = await Patient.find().populate('userId')
         const filtered = patients.filter((p: any) => {
-            let match = true
-            if (query.nom && !(p.userId?.nom ?? '').toLowerCase().includes(query.nom.toLowerCase()))
-                match = false
-            if (
-                query.email &&
-                !(p.userId?.email ?? '').toLowerCase().includes(query.email.toLowerCase())
-            )
-                match = false
-            if (
-                query.telephone &&
-                !(p.telephone ?? '').toLowerCase().includes(query.telephone.toLowerCase())
-            )
-                match = false
-            return match
+            if (!nom) return true
+            return (p.userId?.nom ?? '').toLowerCase().includes(nom)
         })
         return { success: true, message: 'Résultats de la recherche.', patient: filtered }
     }
