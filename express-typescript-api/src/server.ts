@@ -6,16 +6,32 @@ import connectDB from './config/dbconnect'
 import AuthController from './resources/auth/auth.controller'
 import PatientController from './resources/patient/patient.controller'
 import KineController from './resources/kine/kine.controller'
+import RendezVousController from './resources/rendezvous/rendezvous.controller'
+import autoCancelRendezVousJob from './jobs/autoCancelRendezVous'
+import logger from './config/logger'
 
 validateEnv()
 
 const start = async (): Promise<void> => {
     await connectDB()
     const app = new App(
-        [new AuthController(), new PatientController(), new KineController()],
+        [
+            new AuthController(),
+            new PatientController(),
+            new KineController(),
+            new RendezVousController(),
+        ],
         Number(process.env.PORT ?? DEFAULT_ENV.PORT),
     )
     app.listen()
+    // Lancer le job d'annulation automatique toutes les 5 minutes
+    setInterval(
+        () => {
+            logger.info('Lancement du job autoCancelRendezVousJob')
+            autoCancelRendezVousJob().catch(logger.error)
+        },
+        5 * 60 * 1000,
+    )
 }
 
 void start()
