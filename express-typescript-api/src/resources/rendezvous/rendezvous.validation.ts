@@ -1,8 +1,8 @@
 import { z } from 'zod'
 
 export const createRendezVousSchema = z.object({
-    patientId: z.string().min(1, 'Le patient est requis'),
-    kineId: z.string().min(1, 'Le kiné est requis'),
+    patientId: z.string().min(1, 'Le patient est requis').optional(),
+    kineId: z.string().min(1, 'Le kiné est requis').optional(),
     date: z.string().datetime({ message: 'Date invalide' }),
     duree: z.number().int().positive().default(30).optional(),
     motif: z.string().optional(),

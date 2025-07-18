@@ -4,6 +4,7 @@ import { createRendezVousSchema, updateRendezVousSchema } from './rendezvous.val
 import zodValidator from '../../middleware/zod-validator.middleware'
 import jsonResponse from '../../utils/jsonResponse'
 import authMiddleware from '../../middleware/auth.middleware'
+import { RoleEnum } from '../../models/user.model'
 
 class RendezVousController {
     public path = '/rdvs'
@@ -24,6 +25,7 @@ class RendezVousController {
         )
         this.router.get('/', authMiddleware, this.getRendezVousByKineAndDate)
         this.router.get('/patients/:kineId', authMiddleware, this.getPatientsByKine)
+        this.router.get('/patients/:kineId/search', authMiddleware, this.searchPatientsByKine)
         this.router.put(
             '/:id',
             authMiddleware,
@@ -51,7 +53,37 @@ class RendezVousController {
         next: NextFunction,
     ): Promise<Response | void> => {
         try {
-            const result = await this.rendezVousService.createRendezVous(req.body)
+            const { user } = req as any
+            if (!user) {
+                return res.status(401).json(jsonResponse('Non authentifié', false))
+            }
+            const { role, userId } = user
+            const body = { ...req.body }
+            if (role === RoleEnum.PATIENT) {
+                body.patientId = userId
+                if (!body.kineId) {
+                    return res
+                        .status(400)
+                        .json(jsonResponse('Le champ kineId est requis pour un patient', false))
+                }
+            } else if (role === RoleEnum.KINE) {
+                body.kineId = userId
+                if (!body.patientId) {
+                    return res
+                        .status(400)
+                        .json(jsonResponse('Le champ patientId est requis pour un kiné', false))
+                }
+            } else {
+                return res
+                    .status(403)
+                    .json(
+                        jsonResponse(
+                            'Seuls les patients ou kinés peuvent créer un rendez-vous',
+                            false,
+                        ),
+                    )
+            }
+            const result = await this.rendezVousService.createRendezVous(body)
             if (result.success) {
                 return res
                     .status(201)
@@ -104,6 +136,28 @@ class RendezVousController {
                 return res
                     .status(200)
                     .json(jsonResponse('Liste des patients du kiné', true, result.rendezvous))
+            }
+            return res
+                .status(404)
+                .json(jsonResponse(result.message ?? 'Aucun patient', false, result))
+        } catch (error) {
+            next(error)
+        }
+    }
+
+    private readonly searchPatientsByKine = async (
+        req: Request,
+        res: Response,
+        next: NextFunction,
+    ): Promise<Response | void> => {
+        try {
+            const { kineId } = req.params
+            const search = (req.query.q as string) || ''
+            const result = await this.rendezVousService.searchPatientsByKine(kineId, search)
+            if (result.success) {
+                return res
+                    .status(200)
+                    .json(jsonResponse('Résultats de la recherche', true, result.rendezvous))
             }
             return res
                 .status(404)

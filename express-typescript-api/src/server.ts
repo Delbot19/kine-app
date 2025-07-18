@@ -7,6 +7,7 @@ import AuthController from './resources/auth/auth.controller'
 import PatientController from './resources/patient/patient.controller'
 import KineController from './resources/kine/kine.controller'
 import RendezVousController from './resources/rendezvous/rendezvous.controller'
+import AdminController from './resources/admin/admin.controller'
 import autoCancelRendezVousJob from './jobs/autoCancelRendezVous'
 import logger from './config/logger'
 
@@ -20,6 +21,7 @@ const start = async (): Promise<void> => {
             new PatientController(),
             new KineController(),
             new RendezVousController(),
+            new AdminController(),
         ],
         Number(process.env.PORT ?? DEFAULT_ENV.PORT),
     )

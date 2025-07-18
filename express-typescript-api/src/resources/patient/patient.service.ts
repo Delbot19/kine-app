@@ -1,7 +1,7 @@
 import type { Types } from 'mongoose'
 import Patient from '../../models/patient.model'
 import type { CreatePatientInput, UpdatePatientInput } from './patient.interface'
-import User from '../../models/user.model'
+import User, { RoleEnum } from '../../models/user.model'
 
 interface PatientServiceResult {
     success: boolean
@@ -25,12 +25,16 @@ export default class PatientService {
         userId: string,
         role: string,
     ): Promise<PatientServiceResult> {
-        const patient = await Patient.findById(patientId)
+        let patient = await Patient.findById(patientId)
+        if (!patient && typeof patientId === 'string' && patientId.length === 24) {
+            // Peut-être un userId
+            patient = await Patient.findOne({ userId: patientId })
+        }
         if (!patient) {
             return { success: false, message: 'Patient non trouvé.' }
         }
         // Vérification d'accès : admin ou propriétaire
-        if (role !== 'ADMIN' && String(patient.userId) !== String(userId)) {
+        if (role !== RoleEnum.ADMIN && String(patient.userId) !== String(userId)) {
             return { success: false, message: 'Accès refusé.' }
         }
         return { success: true, message: 'Patient trouvé.', patient }
@@ -42,14 +46,17 @@ export default class PatientService {
         userId: string,
         role: string,
     ): Promise<PatientServiceResult> {
-        const patient = await Patient.findById(patientId)
+        let patient = await Patient.findById(patientId)
+        if (!patient && typeof patientId === 'string' && patientId.length === 24) {
+            patient = await Patient.findOne({ userId: patientId })
+        }
         if (!patient) {
             return { success: false, message: 'Patient non trouvé.' }
         }
-        if (role !== 'ADMIN' && String(patient.userId) !== String(userId)) {
+        if (role !== RoleEnum.ADMIN && String(patient.userId) !== String(userId)) {
             return { success: false, message: 'Accès refusé.' }
         }
-        const updated = await Patient.findByIdAndUpdate(patientId, input, { new: true })
+        const updated = await Patient.findByIdAndUpdate(patient._id, input, { new: true })
         return { success: true, message: 'Patient mis à jour.', patient: updated }
     }
 
@@ -58,14 +65,17 @@ export default class PatientService {
         userId: string,
         role: string,
     ): Promise<PatientServiceResult> {
-        const patient = await Patient.findById(patientId)
+        let patient = await Patient.findById(patientId)
+        if (!patient && typeof patientId === 'string' && patientId.length === 24) {
+            patient = await Patient.findOne({ userId: patientId })
+        }
         if (!patient) {
             return { success: false, message: 'Patient non trouvé ou déjà supprimé.' }
         }
-        if (role !== 'ADMIN' && String(patient.userId) !== String(userId)) {
+        if (role !== RoleEnum.ADMIN && String(patient.userId) !== String(userId)) {
             return { success: false, message: 'Accès refusé.' }
         }
-        await Patient.findByIdAndDelete(patientId)
+        await Patient.findByIdAndDelete(patient._id)
         // Suppression du User associé
         await User.findByIdAndDelete(patient.userId)
         return { success: true, message: 'Patient et utilisateur supprimés.' }
@@ -85,14 +95,14 @@ export default class PatientService {
             typeof patient.userId === 'object' && patient.userId !== null && '_id' in patient.userId
                 ? patient.userId._id
                 : patient.userId
-        if (role !== 'ADMIN' && String(userIdToCheck) !== String(requesterId)) {
+        if (role !== RoleEnum.ADMIN && String(userIdToCheck) !== String(requesterId)) {
             return { success: false, message: 'Accès refusé.' }
         }
         return { success: true, message: 'Patient trouvé.', patient }
     }
 
     async getAllPatients(role: string): Promise<PatientServiceResult> {
-        if (role !== 'ADMIN') {
+        if (role !== RoleEnum.ADMIN) {
             return { success: false, message: 'Accès refusé.' }
         }
         const patients = await Patient.find().populate('userId')
@@ -100,15 +110,17 @@ export default class PatientService {
     }
 
     async searchPatients(query: any, role: string): Promise<PatientServiceResult> {
-        if (role !== 'ADMIN') {
+        if (role !== RoleEnum.ADMIN) {
             return { success: false, message: 'Accès refusé.' }
         }
-        // Recherche uniquement par nom
-        const nom = query.nom ? query.nom.toLowerCase() : ''
+        // Recherche par nom ou prénom (insensible à la casse)
+        const search = (query.nom || '').toLowerCase()
         const patients = await Patient.find().populate('userId')
         const filtered = patients.filter((p: any) => {
-            if (!nom) return true
-            return (p.userId?.nom ?? '').toLowerCase().includes(nom)
+            if (!search) return true
+            const nom = (p.userId?.nom ?? '').toLowerCase()
+            const prenom = (p.userId?.prenom ?? '').toLowerCase()
+            return nom.includes(search) || prenom.includes(search)
         })
         return { success: true, message: 'Résultats de la recherche.', patient: filtered }
     }

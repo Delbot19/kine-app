@@ -1,6 +1,6 @@
 import { Router, type Request, type Response, type NextFunction } from 'express'
 import KineService from './kine.service'
-import { createKineSchema, updateKineSchema } from './kine.validation'
+import { updateKineSchema } from './kine.validation'
 import zodValidator from '../../middleware/zod-validator.middleware'
 import jsonResponse from '../../utils/jsonResponse'
 import authMiddleware from '../../middleware/auth.middleware'
@@ -15,38 +15,12 @@ class KineController {
     }
 
     private initializeRoutes(): void {
-        this.router.post('/', authMiddleware, zodValidator(createKineSchema), this.createKine)
         this.router.get('/by-user/:userId', authMiddleware, this.getKineByUserId)
         this.router.get('/', authMiddleware, this.getAllKines)
         this.router.get('/search', authMiddleware, this.searchKines)
         this.router.get('/:id', authMiddleware, this.getKineById)
         this.router.put('/:id', authMiddleware, zodValidator(updateKineSchema), this.updateKine)
         this.router.delete('/:id', authMiddleware, this.deleteKine)
-    }
-
-    private readonly createKine = async (
-        req: Request,
-        res: Response,
-        next: NextFunction,
-    ): Promise<Response | void> => {
-        try {
-            // userId injecté par le middleware d'auth (ex: req.user.userId ou req.user._id)
-            const userId = (req as any).user?.userId || (req as any).user?._id
-            const role = (req as any).user?.role
-            if (!userId) {
-                return res.status(401).json(jsonResponse('Non authentifié', false))
-            }
-            // On ajoute userId au body avant d'appeler le service
-            const result = await this.kineService.createKine({ ...req.body, userId }, role)
-            if (result.success) {
-                return res.status(201).json(jsonResponse('Kiné créé', true, result.kine))
-            }
-            return res
-                .status(400)
-                .json(jsonResponse('Erreur lors de la création du kiné', false, result))
-        } catch (error) {
-            next(error)
-        }
     }
 
     private readonly getKineById = async (

@@ -29,7 +29,10 @@ export default class KineService {
         userId: string,
         role: string,
     ): Promise<KineServiceResult> {
-        const kine = await Kine.findById(kineId)
+        let kine = await Kine.findById(kineId)
+        if (!kine && typeof kineId === 'string' && kineId.length === 24) {
+            kine = await Kine.findOne({ userId: kineId })
+        }
         if (!kine) {
             return { success: false, message: 'Kiné non trouvé.' }
         }
@@ -46,14 +49,17 @@ export default class KineService {
         userId: string,
         role: string,
     ): Promise<KineServiceResult> {
-        const kine = await Kine.findById(kineId)
+        let kine = await Kine.findById(kineId)
+        if (!kine && typeof kineId === 'string' && kineId.length === 24) {
+            kine = await Kine.findOne({ userId: kineId })
+        }
         if (!kine) {
             return { success: false, message: 'Kiné non trouvé.' }
         }
         if (role !== RoleEnum.ADMIN && String(kine.userId) !== String(userId)) {
             return { success: false, message: 'Accès refusé.' }
         }
-        const updated = await Kine.findByIdAndUpdate(kineId, input, { new: true })
+        const updated = await Kine.findByIdAndUpdate(kine._id, input, { new: true })
         return { success: true, message: 'Kiné mis à jour.', kine: updated }
     }
 
@@ -62,14 +68,17 @@ export default class KineService {
         userId: string,
         role: string,
     ): Promise<KineServiceResult> {
-        const kine = await Kine.findById(kineId)
+        let kine = await Kine.findById(kineId)
+        if (!kine && typeof kineId === 'string' && kineId.length === 24) {
+            kine = await Kine.findOne({ userId: kineId })
+        }
         if (!kine) {
             return { success: false, message: 'Kiné non trouvé ou déjà supprimé.' }
         }
         if (role !== RoleEnum.ADMIN && String(kine.userId) !== String(userId)) {
             return { success: false, message: 'Accès refusé.' }
         }
-        await Kine.findByIdAndDelete(kineId)
+        await Kine.findByIdAndDelete(kine._id)
         // Suppression du User associé
         await User.findByIdAndDelete(kine.userId)
         return { success: true, message: 'Kiné et utilisateur supprimés.' }
@@ -107,12 +116,14 @@ export default class KineService {
         if (role !== RoleEnum.ADMIN) {
             return { success: false, message: 'Accès refusé.' }
         }
-        // Recherche uniquement par nom
-        const nom = query.nom ? query.nom.toLowerCase() : ''
+        // Recherche par nom ou prénom (insensible à la casse)
+        const search = (query.nom || '').toLowerCase()
         const kines = await Kine.find().populate('userId')
         const filtered = kines.filter((k: any) => {
-            if (!nom) return true
-            return (k.userId?.nom ?? '').toLowerCase().includes(nom)
+            if (!search) return true
+            const nom = (k.userId?.nom ?? '').toLowerCase()
+            const prenom = (k.userId?.prenom ?? '').toLowerCase()
+            return nom.includes(search) || prenom.includes(search)
         })
         return { success: true, message: 'Résultats de la recherche.', kine: filtered }
     }

@@ -17,9 +17,9 @@ interface RendezVousServiceResult {
 
 export default class RendezVousService {
     async createRendezVous(input: CreateRendezVousInput): Promise<RendezVousServiceResult> {
-        // Vérifier que le patient et le kiné existent
-        const patient = await Patient.findById(input.patientId)
-        const kine = await Kine.findById(input.kineId)
+        // Vérifier que le patient et le kiné existent (par userId)
+        const patient = await Patient.findOne({ userId: input.patientId })
+        const kine = await Kine.findOne({ userId: input.kineId })
         if (!patient || !kine) {
             return { success: false, message: 'Patient ou kiné introuvable.' }
         }
@@ -89,6 +89,31 @@ export default class RendezVousService {
             success: true,
             message: 'Liste des patients du kiné.',
             rendezvous: Array.from(patientsMap.values()),
+        }
+    }
+
+    async searchPatientsByKine(kineId: string, search: string): Promise<RendezVousServiceResult> {
+        // Liste unique des patients ayant eu au moins un RDV avec ce kiné
+        const rdvs = await RendezVous.find({ kineId }).populate('patientId')
+        const patientsMap = new Map()
+        rdvs.forEach((rdv: any) => {
+            if (rdv.patientId) {
+                patientsMap.set(String(rdv.patientId._id), rdv.patientId)
+            }
+        })
+        let patients = Array.from(patientsMap.values())
+        if (search) {
+            const s = search.toLowerCase()
+            patients = patients.filter((p: any) => {
+                const nom = (p.userId?.nom ?? '').toLowerCase()
+                const prenom = (p.userId?.prenom ?? '').toLowerCase()
+                return nom.includes(s) || prenom.includes(s)
+            })
+        }
+        return {
+            success: true,
+            message: 'Résultats de la recherche parmi les patients du kiné.',
+            rendezvous: patients,
         }
     }
 
