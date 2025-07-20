@@ -12,3 +12,13 @@ export interface UpdateKineInput {
     numeroRPPS?: string
     presentation?: string
 }
+
+export interface RegisterKineInput {
+    nom: string
+    prenom: string
+    email: string
+    motDePasse: string
+    specialite: string
+    numeroRPPS: string
+    presentation?: string
+}

@@ -1,9 +1,10 @@
 import User, { RoleEnum } from '../../models/user.model'
 import Kine from '../../models/kine.model'
 import { hashPassword } from '../../utils/bcrypt'
+import { type RegisterKineInput } from '../kine/kine.interface'
 
 export default class AdminService {
-    async registerKine(input: any, role: string): Promise<any> {
+    async registerKine(input: RegisterKineInput, role: string): Promise<any> {
         if (role !== RoleEnum.ADMIN) {
             return { success: false, message: 'Accès réservé aux admins.' }
         }
