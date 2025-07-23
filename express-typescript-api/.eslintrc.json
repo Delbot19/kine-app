@@ -26,7 +26,8 @@
                 "@typescript-eslint/strict-boolean-expressions": "off",
                 "@typescript-eslint/return-await": "off",
                 "no-return-await": "off",
-                "no-underscore-dangle": "off"
+                "no-underscore-dangle": "off",
+                "import/prefer-default-export": "off"
             }
         }
     ],
