@@ -2,22 +2,57 @@ import type { Types } from 'mongoose'
 import Patient from '../../models/patient.model'
 import type { CreatePatientInput, UpdatePatientInput } from './patient.interface'
 import User, { RoleEnum } from '../../models/user.model'
+import { hashPassword } from '../../utils/bcrypt'
 
 interface PatientServiceResult {
     success: boolean
     patient?: any
     message?: string
+    user?: any
 }
 
 export default class PatientService {
     async createPatient(input: CreatePatientInput): Promise<PatientServiceResult> {
-        // Vérifier si un patient existe déjà pour ce userId
-        const exists = await Patient.findOne({ userId: input.userId })
-        if (exists) {
-            return { success: false, message: 'Un patient existe déjà pour cet utilisateur.' }
+        // Vérifier si l'email existe déjà
+        const existingUser = await User.findOne({ email: input.email })
+        if (existingUser) {
+            return { success: false, message: 'Email déjà utilisé.' }
         }
-        const patient = await Patient.create(input)
-        return { success: true, message: 'Patient créé.', patient }
+
+        // Hasher le mot de passe
+        const hashedPassword = await hashPassword(input.motDePasse)
+
+        // Créer le User
+        const user = await User.create({
+            nom: input.nom,
+            prenom: input.prenom,
+            email: input.email,
+            motDePasse: hashedPassword,
+            role: RoleEnum.PATIENT,
+        })
+
+        // Créer le Patient
+        const patient = await Patient.create({
+            userId: user._id,
+            dateNaissance: input.dateNaissance,
+            sexe: input.sexe,
+            adresse: input.adresse,
+            telephone: input.telephone,
+            groupeSanguin: input.groupeSanguin,
+        })
+
+        return {
+            success: true,
+            message: 'Patient créé avec succès',
+            user: {
+                _id: user._id,
+                nom: user.nom,
+                prenom: user.prenom,
+                email: user.email,
+                role: user.role,
+            },
+            patient,
+        }
     }
 
     async getPatientById(

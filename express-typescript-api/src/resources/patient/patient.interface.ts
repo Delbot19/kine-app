@@ -1,8 +1,12 @@
 // Interfaces pour les entrées Patient (DTO)
-import { type Schema } from 'mongoose'
+import { type RoleEnum } from '../../models/user.model'
 
 export interface CreatePatientInput {
-    userId?: Schema.Types.ObjectId | string // devient optionnel
+    nom: string
+    prenom: string
+    email: string
+    motDePasse: string
+    role?: RoleEnum
     sexe: 'H' | 'F'
     dateNaissance: Date | string
     adresse: string

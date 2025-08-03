@@ -1,6 +1,6 @@
 import { Router, type Request, type Response, type NextFunction } from 'express'
 import AuthService from './auth.service'
-import { registerSchema, loginSchema } from './auth.validation'
+import { loginSchema } from './auth.validation'
 import zodValidator from '../../middleware/zod-validator.middleware'
 import jsonResponse from '../../utils/jsonResponse'
 
@@ -14,28 +14,7 @@ class AuthController {
     }
 
     private initializeRoutes(): void {
-        this.router.post('/register', zodValidator(registerSchema), this.register)
         this.router.post('/login', zodValidator(loginSchema), this.login)
-    }
-
-    private readonly register = async (
-        req: Request,
-        res: Response,
-        next: NextFunction,
-    ): Promise<Response | void> => {
-        try {
-            const result = await this.authService.register(req.body)
-            if (result.success) {
-                return res
-                    .status(201)
-                    .json(jsonResponse('Utilisateur créé avec succès', true, result))
-            }
-            return res
-                .status(400)
-                .json(jsonResponse("Erreur lors de la création de l'utilisateur", false, result))
-        } catch (error) {
-            next(error)
-        }
     }
 
     private readonly login = async (

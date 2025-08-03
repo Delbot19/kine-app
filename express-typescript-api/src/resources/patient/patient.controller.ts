@@ -15,7 +15,7 @@ class PatientController {
     }
 
     private initializeRoutes(): void {
-        this.router.post('/', authMiddleware, zodValidator(createPatientSchema), this.createPatient)
+        this.router.post('/', zodValidator(createPatientSchema), this.createPatient)
         this.router.get('/by-user/:userId', authMiddleware, this.getPatientByUserId)
         this.router.get('/', authMiddleware, this.getAllPatients)
         this.router.get('/search', authMiddleware, this.searchPatients)
@@ -35,15 +35,9 @@ class PatientController {
         next: NextFunction,
     ): Promise<Response | void> => {
         try {
-            // userId injecté par le middleware d'auth (ex: req.user.userId ou req.user._id)
-            const userId = (req as any).user?.userId || (req as any).user?._id
-            if (!userId) {
-                return res.status(401).json(jsonResponse('Non authentifié', false))
-            }
-            // On ajoute userId au body avant d'appeler le service
-            const result = await this.patientService.createPatient({ ...req.body, userId })
+            const result = await this.patientService.createPatient(req.body)
             if (result.success) {
-                return res.status(201).json(jsonResponse('Patient créé', true, result.patient))
+                return res.status(201).json(jsonResponse('Patient créé', true, result))
             }
             return res
                 .status(400)

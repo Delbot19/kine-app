@@ -5,14 +5,6 @@ export interface LoginInput {
     motDePasse: string
 }
 
-export interface RegisterInput {
-    nom: string
-    prenom: string
-    email: string
-    motDePasse: string
-    role?: RoleEnum
-}
-
 // Sert à typer le contenu du token JWT
 export interface JwtPayload {
     userId: string
