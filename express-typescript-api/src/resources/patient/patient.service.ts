@@ -22,36 +22,45 @@ export default class PatientService {
         // Hasher le mot de passe
         const hashedPassword = await hashPassword(input.motDePasse)
 
-        // Créer le User
-        const user = await User.create({
-            nom: input.nom,
-            prenom: input.prenom,
-            email: input.email,
-            motDePasse: hashedPassword,
-            role: RoleEnum.PATIENT,
-        })
+        let user
+        try {
+            // Créer le User
+            user = await User.create({
+                nom: input.nom,
+                prenom: input.prenom,
+                email: input.email,
+                motDePasse: hashedPassword,
+                role: RoleEnum.PATIENT,
+            })
 
-        // Créer le Patient
-        const patient = await Patient.create({
-            userId: user._id,
-            dateNaissance: input.dateNaissance,
-            sexe: input.sexe,
-            adresse: input.adresse,
-            telephone: input.telephone,
-            groupeSanguin: input.groupeSanguin,
-        })
+            // Créer le Patient
+            const patient = await Patient.create({
+                userId: user._id,
+                dateNaissance: input.dateNaissance,
+                sexe: input.sexe,
+                adresse: input.adresse,
+                telephone: input.telephone,
+                groupeSanguin: input.groupeSanguin,
+            })
 
-        return {
-            success: true,
-            message: 'Patient créé avec succès',
-            user: {
-                _id: user._id,
-                nom: user.nom,
-                prenom: user.prenom,
-                email: user.email,
-                role: user.role,
-            },
-            patient,
+            return {
+                success: true,
+                message: 'Patient créé avec succès',
+                user: {
+                    _id: user._id,
+                    nom: user.nom,
+                    prenom: user.prenom,
+                    email: user.email,
+                    role: user.role,
+                },
+                patient,
+            }
+        } catch (error) {
+            // Rollback: Si le user a été créé mais que la suite a échoué
+            if (user) {
+                await User.findByIdAndDelete(user._id)
+            }
+            throw error
         }
     }
 

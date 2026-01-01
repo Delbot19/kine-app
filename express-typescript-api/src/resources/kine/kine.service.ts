@@ -105,17 +105,13 @@ export default class KineService {
     }
 
     async getAllKines(role: string): Promise<KineServiceResult> {
-        if (role !== RoleEnum.ADMIN) {
-            return { success: false, message: 'Accès refusé.' }
-        }
+        // Allow public/patient access
         const kines = await Kine.find().populate('userId')
         return { success: true, message: 'Liste des kinés.', kine: kines }
     }
 
     async searchKines(query: any, role: string): Promise<KineServiceResult> {
-        if (role !== RoleEnum.ADMIN) {
-            return { success: false, message: 'Accès refusé.' }
-        }
+        // Allow public/patient access
         // Recherche par nom ou prénom (insensible à la casse)
         const search = (query.nom || '').toLowerCase()
         const kines = await Kine.find().populate('userId')

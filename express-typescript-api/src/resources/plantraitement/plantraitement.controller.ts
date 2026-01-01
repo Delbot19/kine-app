@@ -22,7 +22,12 @@ class PlanTraitementController {
             this.createPlanTraitement,
         )
         this.router.get('/', authMiddleware, this.getAllPlansTraitement)
+        // Reordered: Specific routes BEFORE generic route /:id
+        this.router.get('/patient/:patientId', authMiddleware, this.getPlansByPatient)
+        this.router.get('/kine/:kineId', authMiddleware, this.getPlansByKine)
+
         this.router.get('/:id', authMiddleware, this.getPlanTraitementById)
+
         this.router.put(
             '/:id',
             authMiddleware,
@@ -30,8 +35,6 @@ class PlanTraitementController {
             this.updatePlanTraitement,
         )
         this.router.delete('/:id', authMiddleware, this.deletePlanTraitement)
-        this.router.get('/patient/:patientId', authMiddleware, this.getPlansByPatient)
-        this.router.get('/kine/:kineId', authMiddleware, this.getPlansByKine)
     }
 
     private readonly createPlanTraitement = async (

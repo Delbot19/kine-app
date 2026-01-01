@@ -8,6 +8,7 @@ import PatientController from './resources/patient/patient.controller'
 import KineController from './resources/kine/kine.controller'
 import RendezVousController from './resources/rendezvous/rendezvous.controller'
 import AdminController from './resources/admin/admin.controller'
+import PlanTraitementController from './resources/plantraitement/plantraitement.controller'
 import autoCancelRendezVousJob from './jobs/autoCancelRendezVous'
 import logger from './config/logger'
 
@@ -22,6 +23,7 @@ const start = async (): Promise<void> => {
             new KineController(),
             new RendezVousController(),
             new AdminController(),
+            new PlanTraitementController(), // Added this
         ],
         Number(process.env.PORT ?? DEFAULT_ENV.PORT),
     )

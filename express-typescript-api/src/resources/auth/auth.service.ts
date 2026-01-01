@@ -20,7 +20,7 @@ export default class AuthService {
         const { motDePasse, ...userSafe } = userObj
         // eslint-disable-next-line no-underscore-dangle
         const token = generateToken({
-            userId: String((userSafe as { _id: string })._id),
+            userId: String(user._id),
             email: user.email,
             role: user.role,
         })

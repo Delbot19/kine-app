@@ -16,7 +16,7 @@
         "format": "prettier --write ."
     },
     "keywords": [],
-    "author": "Giovani de SOUZA",
+    "author": "Delbot Oussou",
     "license": "ISC",
     "devDependencies": {
         "@types/compression": "^1.7.5",

@@ -24,6 +24,7 @@ class RendezVousController {
             this.createRendezVous,
         )
         this.router.get('/', authMiddleware, this.getRendezVousByKineAndDate)
+        this.router.get('/patient/:patientId', authMiddleware, this.getRendezVousByPatient)
         this.router.get('/patients/:kineId', authMiddleware, this.getPatientsByKine)
         this.router.get('/patients/:kineId/search', authMiddleware, this.searchPatientsByKine)
         this.router.put(
@@ -60,7 +61,11 @@ class RendezVousController {
             const { role, userId } = user
             const body = { ...req.body }
             if (role === RoleEnum.PATIENT) {
-                body.patientId = userId
+                if (!body.patientId) {
+                    return res
+                        .status(400)
+                        .json(jsonResponse('Le champ patientId est requis', false))
+                }
                 if (!body.kineId) {
                     return res
                         .status(400)
@@ -115,6 +120,32 @@ class RendezVousController {
                 return res
                     .status(200)
                     .json(jsonResponse('Liste des rendez-vous', true, result.rendezvous))
+            }
+            return res
+                .status(404)
+                .json(jsonResponse(result.message ?? 'Aucun rendez-vous', false, result))
+        } catch (error) {
+            next(error)
+        }
+    }
+
+    private readonly getRendezVousByPatient = async (
+        req: Request,
+        res: Response,
+        next: NextFunction,
+    ): Promise<Response | void> => {
+        try {
+            const { patientId } = req.params
+            const onlyUpcoming = req.query.onlyUpcoming === 'true'
+
+            const result = await this.rendezVousService.getRendezVousByPatient(patientId, {
+                onlyUpcoming,
+            })
+
+            if (result.success) {
+                return res
+                    .status(200)
+                    .json(jsonResponse('Liste des rendez-vous patient', true, result.rendezvous))
             }
             return res
                 .status(404)

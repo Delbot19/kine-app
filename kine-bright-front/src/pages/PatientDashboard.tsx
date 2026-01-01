@@ -1,0 +1,415 @@
+import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
+import Layout from '@/components/layout/Layout';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import AppointmentCard from '@/components/cards/AppointmentCard';
+import ProfileCard from '@/components/cards/ProfileCard';
+import {
+  Calendar,
+  Clock,
+  User,
+  FileText,
+  Heart,
+  Phone,
+  MapPin,
+  Plus,
+  Activity,
+  AlertCircle,
+  Loader2
+} from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
+import axios from 'axios';
+import { useToast } from '@/hooks/use-toast';
+
+import { format } from 'date-fns';
+import { fr } from 'date-fns/locale';
+
+const API_BASE_URL = 'http://localhost:8000/api';
+
+interface Patient {
+  _id: string;
+  telephone: string;
+  adresse: string;
+  dateNaissance: string;
+  groupeSanguin?: string;
+}
+
+interface Appointment {
+  id: string;
+  date: string;
+  rawDate: Date;
+  time: string;
+  doctor: string;
+  specialty: string;
+  location: string;
+  status: 'confirmé' | 'en_attente' | 'annulé' | 'à venir' | 'en attente' | 'terminé';
+}
+
+/**
+ * Dashboard principal pour les patients
+ * Interface moderne avec gestion des états de chargement et d'erreur
+ */
+const PatientDashboard = () => {
+  const { user } = useAuth();
+  const { toast } = useToast();
+
+  // États pour la gestion des données
+  const [appointments, setAppointments] = useState<Appointment[]>([]);
+  const [patient, setPatient] = useState<Patient | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const [doctor, setDoctor] = useState<{ name: string; email: string } | null>(null);
+
+  // Fonction pour obtenir le titre selon le sexe
+  const getUserTitle = () => {
+    return user?.sexe === 'F' ? 'Mme' : 'Mr';
+  };
+
+  // Chargement des données réelles
+  const loadData = async () => {
+    if (!user) return;
+
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const token = localStorage.getItem('authToken');
+      const config = {
+        headers: { Authorization: `Bearer ${token}` }
+      };
+
+      // 1. Récupérer l'ID Patient lié à l'utilisateur connecté
+      // Le user du contexte a un ID qui est l'ID du compte User, pas du profil Patient.
+      const userId = user.id || (user as { _id?: string })._id;
+      const patientRes = await axios.get(`${API_BASE_URL}/patients/by-user/${userId}`, config);
+
+      if (patientRes.data.success) {
+        const patientData = patientRes.data.data;
+        const patientId = patientData._id;
+        setPatient(patientData);
+
+        // 2. Récupérer les RDV de ce patient
+        // Add timestamp to prevent caching
+        const rdvsRes = await axios.get(`${API_BASE_URL}/rdvs/patient/${patientId}?onlyUpcoming=true&_t=${Date.now()}`, config);
+
+        if (rdvsRes.data.success) {
+          const rdvs = rdvsRes.data.data;
+
+          // Récupérer les infos du kiné depuis le premier RDV qui en a un
+          const firstWithDoctor = rdvs.find((r: { kineId?: { userId?: { prenom: string; nom: string; email: string } } }) => r.kineId?.userId);
+          if (firstWithDoctor) {
+            setDoctor({
+              name: `Dr. ${firstWithDoctor.kineId.userId.prenom} ${firstWithDoctor.kineId.userId.nom}`,
+              email: firstWithDoctor.kineId.userId.email
+            });
+          }
+
+          const mappedRdvs = rdvs.map((rdv: { _id: string; date: string; statut: string; kineId?: { userId?: { prenom: string; nom: string }; specialite?: string } }) => {
+            const rdvDate = new Date(rdv.date);
+            return {
+              id: rdv._id,
+              date: format(rdvDate, 'yyyy-MM-dd'),
+              rawDate: rdvDate,
+              time: format(rdvDate, 'HH:mm'),
+              doctor: rdv.kineId?.userId ? `Dr. ${rdv.kineId.userId.prenom} ${rdv.kineId.userId.nom}` : 'Non assigné',
+              specialty: rdv.kineId?.specialite || 'Kinésithérapie',
+              location: 'Cabinet PhysioCenter',
+              status: rdv.statut as 'confirmé' | 'en_attente' | 'annulé' | 'à venir' | 'en attente' | 'terminé'
+            };
+          });
+          setAppointments(mappedRdvs);
+        }
+      }
+    } catch (err) {
+      console.error("Erreur chargement dashboard:", err);
+      // Si 404 sur patient, c'est peut-être un nouveau compte sans profil patient
+      if ((err as { response?: { status?: number } }).response?.status === 404) {
+        // Pas d'erreur fatale, juste pas de données
+        setAppointments([]);
+      } else {
+        setError("Impossible de charger vos rendez-vous.");
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user]);
+
+  // Fonction pour mettre à jour le profil patient
+  const handleUpdateProfile = async (data: { telephone: string; adresse: string; groupeSanguin: string }) => {
+    if (!patient) return;
+
+    try {
+      const token = localStorage.getItem('authToken');
+      const config = {
+        headers: { Authorization: `Bearer ${token}` }
+      };
+
+      const updateRes = await axios.put(
+        `${API_BASE_URL}/patients/${patient._id}`,
+        data,
+        config
+      );
+
+      if (updateRes.data.success) {
+        // Mettre à jour le state local avec les nouvelles données
+        setPatient({ ...patient, ...data });
+        toast({
+          title: "Profil mis à jour",
+          description: "Vos informations ont été mises à jour avec succès.",
+        });
+      }
+    } catch (err) {
+      console.error("Erreur mise à jour profil:", err);
+      toast({
+        title: "Erreur",
+        description: "Impossible de mettre à jour vos informations.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleCancelAppointment = async (id: string) => {
+    try {
+      const token = localStorage.getItem('authToken');
+      const config = { headers: { Authorization: `Bearer ${token}` } };
+      const res = await axios.patch(`${API_BASE_URL}/rdvs/${id}/cancel`, {}, config);
+      if (res.data.success) {
+        toast({ title: "Rendez-vous annulé", description: "Le rendez-vous a été annulé avec succès." });
+        loadData();
+      }
+    } catch (error) {
+      console.error("Erreur annulation:", error);
+      toast({ title: "Erreur", description: "Impossible d'annuler le rendez-vous.", variant: "destructive" });
+    }
+  };
+
+  const handleModifyAppointment = async (id: string, newDate: Date) => {
+    try {
+      const token = localStorage.getItem('authToken');
+      const config = { headers: { Authorization: `Bearer ${token}` } };
+      const res = await axios.put(`${API_BASE_URL}/rdvs/${id}`, { date: newDate.toISOString() }, config);
+      if (res.data.success) {
+        toast({ title: "Rendez-vous modifié", description: "L'horaire du rendez-vous a été mis à jour." });
+        loadData();
+      }
+    } catch (error) {
+      console.error("Erreur modification:", error);
+      const msg = (error as { response?: { data?: { message?: string } } }).response?.data?.message || "Impossible de modifier le rendez-vous.";
+      toast({ title: "Erreur", description: msg, variant: "destructive" });
+    }
+  };
+
+  // Affichage du loading
+  if (isLoading) {
+    return (
+      <Layout>
+        <div className="flex items-center justify-center min-h-[400px]">
+          <div className="text-center space-y-4">
+            <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto" />
+            <p className="text-muted-foreground">Chargement de vos données...</p>
+          </div>
+        </div>
+      </Layout>
+    );
+  }
+
+  return (
+    <Layout>
+      <div className="space-y-8">
+        {/* Message d'erreur si nécessaire */}
+        {error && (
+          <Alert variant="destructive">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        )}
+
+        {/* En-tête de bienvenue */}
+        <div className="text-center space-y-4 bg-gradient-hero text-white p-8 rounded-2xl shadow-lg mb-8">
+          <h1 className="text-4xl font-bold">
+            Bonjour {getUserTitle()} {user?.prenom} {user?.nom} ! 👋
+          </h1>
+          <p className="text-lg text-white/90 max-w-2xl mx-auto">
+            Bienvenue sur votre espace patient PhysioCenter.
+            Suivez vos rendez-vous, consultez vos exercices et gérez votre traitement en toute simplicité.
+          </p>
+        </div>
+
+
+
+        {/* Actions rapides avec effet Glassmorphism */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <Link to="/appointments">
+            <Card className="cursor-pointer transition-all duration-300 group bg-white/40 backdrop-blur-md border-white/20 hover:bg-white/60 hover:shadow-medical hover:-translate-y-1">
+              <CardContent className="p-6 text-center space-y-3">
+                <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mx-auto group-hover:scale-110 transition-transform">
+                  <Plus className="h-6 w-6 text-primary" />
+                </div>
+                <h3 className="font-semibold text-foreground">Nouveau RDV</h3>
+                <p className="text-sm text-muted-foreground">Prendre un nouveau rendez-vous</p>
+              </CardContent>
+            </Card>
+          </Link>
+
+          <Link to="/treatment">
+            <Card className="cursor-pointer transition-all duration-300 group bg-white/40 backdrop-blur-md border-white/20 hover:bg-white/60 hover:shadow-medical hover:-translate-y-1">
+              <CardContent className="p-6 text-center space-y-3">
+                <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mx-auto group-hover:scale-110 transition-transform">
+                  <Activity className="h-6 w-6 text-primary" />
+                </div>
+                <h3 className="font-semibold text-foreground">Mon traitement</h3>
+                <p className="text-sm text-muted-foreground">Suivre mes avancées</p>
+              </CardContent>
+            </Card>
+          </Link>
+
+          <Link to="/exercises">
+            <Card className="cursor-pointer transition-all duration-300 group bg-white/40 backdrop-blur-md border-white/20 hover:bg-white/60 hover:shadow-medical hover:-translate-y-1">
+              <CardContent className="p-6 text-center space-y-3">
+                <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mx-auto group-hover:scale-110 transition-transform">
+                  <FileText className="h-6 w-6 text-primary" />
+                </div>
+                <h3 className="font-semibold text-foreground">Mes exercices</h3>
+                <p className="text-sm text-muted-foreground">Vidéos et programmes</p>
+              </CardContent>
+            </Card>
+          </Link>
+
+          <Link to="/profile">
+            <Card className="cursor-pointer transition-all duration-300 group bg-white/40 backdrop-blur-md border-white/20 hover:bg-white/60 hover:shadow-medical hover:-translate-y-1">
+              <CardContent className="p-6 text-center space-y-3">
+                <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mx-auto group-hover:scale-110 transition-transform">
+                  <User className="h-6 w-6 text-primary" />
+                </div>
+                <h3 className="font-semibold text-foreground">Mon profil</h3>
+                <p className="text-sm text-muted-foreground">Gérer mes informations</p>
+              </CardContent>
+            </Card>
+          </Link>
+        </div>
+
+        {/* Contenu principal en 2 colonnes */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          {/* Colonne gauche - Rendez-vous */}
+          <div className="space-y-6">
+            <Card className="shadow-card border-none bg-white/50 backdrop-blur-sm">
+              <CardHeader>
+                <CardTitle className="flex items-center justify-between">
+                  <div className="flex items-center space-x-2">
+                    <Calendar className="h-5 w-5 text-primary" />
+                    <span>Mes prochains rendez-vous</span>
+                  </div>
+                  <Badge variant="secondary">{appointments.length}</Badge>
+                </CardTitle>
+                <CardDescription>
+                  Vos rendez-vous à venir au centre PhysioCenter
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {appointments.length > 0 ? (
+                  <ScrollArea className="h-[600px] pr-4">
+                    <div className="space-y-4">
+                      {appointments.map((appointment) => (
+                        <AppointmentCard
+                          key={appointment.id}
+                          appointment={appointment}
+                          variant="hero"
+                          onCancel={handleCancelAppointment}
+                          onModify={handleModifyAppointment}
+                        />
+                      ))}
+                    </div>
+                  </ScrollArea>
+                ) : (
+                  <div className="text-center py-8 space-y-4">
+                    <Calendar className="h-12 w-12 text-muted-foreground mx-auto" />
+                    <div>
+                      <p className="text-muted-foreground">Aucun rendez-vous programmé</p>
+                      <Link to="/appointments">
+                        <Button className="mt-4">
+                          <Plus className="h-4 w-4 mr-2" />
+                          Prendre un rendez-vous
+                        </Button>
+                      </Link>
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Colonne droite - Profil patient */}
+          <div className="space-y-6">
+            {user && patient && <ProfileCard
+              patient={{
+                nom: user.nom,
+                prenom: user.prenom,
+                email: user.email,
+                telephone: patient.telephone,
+                adresse: patient.adresse,
+                dateNaissance: patient.dateNaissance,
+                sexe: user.sexe,
+                groupeSanguin: patient.groupeSanguin
+              }}
+              onUpdate={handleUpdateProfile}
+            />}
+
+            {/* Card contact kiné */}
+            <Card className="border-primary/20 bg-primary/5">
+              <CardHeader>
+                <CardTitle className="text-primary flex items-center space-x-2">
+                  <Phone className="h-5 w-5" />
+                  <span>Contacter votre kiné</span>
+                </CardTitle>
+                <CardDescription className="text-primary/80">
+                  Besoin d'aide ou d'une question urgente ?
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {doctor ? (
+                  <>
+                    <div className="space-y-2 text-sm">
+                      <div className="flex items-center space-x-2 text-muted-foreground">
+                        <User className="h-4 w-4" />
+                        <span className="font-medium">{doctor.name}</span>
+                      </div>
+                      <div className="flex items-center space-x-2 text-muted-foreground">
+                        <span className="font-medium">Disponible :</span>
+                        <span>Lun-Ven 8h-18h</span>
+                      </div>
+                    </div>
+                    <a
+                      href={`mailto:${doctor.email}`}
+                      className="w-full"
+                    >
+                      <Button className="w-full bg-primary hover:bg-primary/90 text-white">
+                        <FileText className="h-4 w-4 mr-2" />
+                        Envoyer un email
+                      </Button>
+                    </a>
+                  </>
+                ) : (
+                  <div className="text-center text-muted-foreground py-4">
+                    <p>Aucun kiné assigné pour le moment.</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </div>
+    </Layout>
+  );
+};
+
+export default PatientDashboard;

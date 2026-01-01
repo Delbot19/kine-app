@@ -17,18 +17,19 @@ interface RendezVousServiceResult {
 
 export default class RendezVousService {
     async createRendezVous(input: CreateRendezVousInput): Promise<RendezVousServiceResult> {
-        // Vérifier que le patient et le kiné existent (par userId)
-        const patient = await Patient.findOne({ userId: input.patientId })
-        const kine = await Kine.findOne({ userId: input.kineId })
+        // IDs received are PatientID and KineID (Model IDs), NOT UserIDs.
+        const patient = await Patient.findById(input.patientId)
+        const kine = await Kine.findById(input.kineId)
         if (!patient || !kine) {
             return { success: false, message: 'Patient ou kiné introuvable.' }
         }
         // Vérifier horaires d'ouverture
         const debut = new Date(input.date)
         const fin = new Date(debut.getTime() + (input.duree ?? 30) * 60000)
-        const day = debut.getDay() // 0 = dimanche, 1 = lundi, ...
+        const day = debut.getDay()
         const heureDebut = debut.getHours() + debut.getMinutes() / 60
         const heureFin = fin.getHours() + fin.getMinutes() / 60
+
         if (
             !CABINET_OPEN_DAYS.includes(day) ||
             heureDebut < CABINET_OPENING_HOUR ||
@@ -37,8 +38,10 @@ export default class RendezVousService {
             return { success: false, message: 'Le cabinet est fermé à cet horaire.' }
         }
         // Vérifier qu'il n'y a pas déjà un RDV à ce créneau pour ce kiné
+        // On ignore les RDV annulés car ils ne bloquent plus le créneau
         const conflit = await RendezVous.findOne({
             kineId: input.kineId,
+            statut: { $ne: 'annulé' }, // Exclure les rendez-vous annulés
             date: {
                 $lt: fin,
                 $gte: debut,
@@ -61,19 +64,45 @@ export default class RendezVousService {
         date: string,
         options?: { onlyUpcoming?: boolean },
     ): Promise<RendezVousServiceResult> {
-        // Chercher tous les RDV d'un kiné pour un jour donné
+        // Chercher tous les RDV d'un kiné à partir d'une date donnée (ex: début de semaine)
         const day = new Date(date)
         const start = new Date(day.setHours(0, 0, 0, 0))
-        const end = new Date(day.setHours(23, 59, 59, 999))
+
+        // On ne limite pas la fin pour permettre au front de récupérer toute la semaine/mois
         const query: any = {
             kineId,
-            date: { $gte: start, $lte: end },
+            date: { $gte: start },
         }
         if (options?.onlyUpcoming) {
-            query.statut = 'à venir'
+            query.statut = { $in: ['en attente', 'à venir'] }
         }
         const rendezvous = await RendezVous.find(query).populate('patientId')
         return { success: true, message: 'Liste des rendez-vous.', rendezvous }
+    }
+
+    async getRendezVousByPatient(
+        patientId: string,
+        options?: { onlyUpcoming?: boolean },
+    ): Promise<RendezVousServiceResult> {
+        const query: any = { patientId }
+
+        if (options?.onlyUpcoming) {
+            // Include 'en attente' as they are active appointments from the patient's perspective
+            query.statut = { $in: ['en attente', 'à venir'] }
+            query.date = { $gte: new Date() }
+        }
+
+        const rendezvous = await RendezVous.find(query)
+            .populate({
+                path: 'kineId',
+                populate: {
+                    path: 'userId',
+                    select: 'nom prenom email',
+                },
+            })
+            .sort({ date: 1 }) // Sort by nearest date first
+
+        return { success: true, message: 'Liste des rendez-vous patient.', rendezvous }
     }
 
     async getPatientsByKine(kineId: string): Promise<RendezVousServiceResult> {
@@ -133,6 +162,7 @@ export default class RendezVousService {
             const conflit = await RendezVous.findOne({
                 _id: { $ne: rdvId },
                 kineId: rdv.kineId,
+                statut: { $ne: 'annulé' }, // Exclure les rendez-vous annulés
                 date: {
                     $lt: fin,
                     $gte: debut,

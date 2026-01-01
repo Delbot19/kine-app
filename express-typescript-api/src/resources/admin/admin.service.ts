@@ -15,32 +15,40 @@ export default class AdminService {
         }
         // 2. Créer le User (rôle kine)
         const hashed = await hashPassword(input.motDePasse)
-        const user = await User.create({
-            nom: input.nom,
-            prenom: input.prenom,
-            email: input.email,
-            motDePasse: hashed,
-            role: RoleEnum.KINE,
-        })
-        // 3. Créer le Kine avec le userId du User créé
-        const kine = await Kine.create({
-            userId: user._id,
-            specialite: input.specialite,
-            numeroRPPS: input.numeroRPPS,
-            presentation: input.presentation,
-        })
-        // 4. Retourner le résultat dans le style des autres services
-        return {
-            success: true,
-            message: 'Kiné créé.',
-            kine,
-            user: {
-                _id: user._id,
-                nom: user.nom,
-                prenom: user.prenom,
-                email: user.email,
-                role: user.role,
-            },
+        let user
+        try {
+            user = await User.create({
+                nom: input.nom,
+                prenom: input.prenom,
+                email: input.email,
+                motDePasse: hashed,
+                role: RoleEnum.KINE,
+            })
+            // 3. Créer le Kine avec le userId du User créé
+            const kine = await Kine.create({
+                userId: user._id,
+                specialite: input.specialite,
+                numeroRPPS: input.numeroRPPS,
+                presentation: input.presentation,
+            })
+            // 4. Retourner le résultat dans le style des autres services
+            return {
+                success: true,
+                message: 'Kiné créé.',
+                kine,
+                user: {
+                    _id: user._id,
+                    nom: user.nom,
+                    prenom: user.prenom,
+                    email: user.email,
+                    role: user.role,
+                },
+            }
+        } catch (error) {
+            if (user) {
+                await User.findByIdAndDelete(user._id)
+            }
+            throw error
         }
     }
 
