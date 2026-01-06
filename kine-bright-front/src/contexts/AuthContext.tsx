@@ -179,6 +179,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       title: "Déconnexion",
       description: "Vous avez été déconnecté avec succès",
     });
+    window.location.href = '/login';
   }, [toast]);
 
   const checkAuth = useCallback(() => {

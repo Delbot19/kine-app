@@ -4,3 +4,8 @@ export interface UpdateUserInput {
     email?: string
     motDePasse?: string
 }
+
+export interface ChangePasswordInput {
+    oldPassword: string
+    newPassword: string
+}

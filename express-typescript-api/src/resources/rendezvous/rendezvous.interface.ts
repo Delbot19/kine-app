@@ -5,7 +5,7 @@ export interface CreateRendezVousInput {
     kineId: Schema.Types.ObjectId | string
     date: Date | string
     duree?: number // optionnel, 30 min par défaut
-    motif?: string
+    motif?: string | { titre: string; description: string }
     statut?: 'en attente' | 'à venir' | 'annulé' | 'terminé'
     paiementEffectue?: boolean
 }
@@ -13,7 +13,7 @@ export interface CreateRendezVousInput {
 export interface UpdateRendezVousInput {
     date?: Date | string
     duree?: number
-    motif?: string
+    motif?: string | { titre: string; description: string }
     statut?: 'en attente' | 'à venir' | 'annulé' | 'terminé'
     paiementEffectue?: boolean
 }

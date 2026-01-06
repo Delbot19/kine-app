@@ -94,20 +94,10 @@ const PatientDashboard = () => {
         setPatient(patientData);
 
         // 2. Récupérer les RDV de ce patient
-        // Add timestamp to prevent caching
         const rdvsRes = await axios.get(`${API_BASE_URL}/rdvs/patient/${patientId}?onlyUpcoming=true&_t=${Date.now()}`, config);
 
         if (rdvsRes.data.success) {
           const rdvs = rdvsRes.data.data;
-
-          // Récupérer les infos du kiné depuis le premier RDV qui en a un
-          const firstWithDoctor = rdvs.find((r: { kineId?: { userId?: { prenom: string; nom: string; email: string } } }) => r.kineId?.userId);
-          if (firstWithDoctor) {
-            setDoctor({
-              name: `Dr. ${firstWithDoctor.kineId.userId.prenom} ${firstWithDoctor.kineId.userId.nom}`,
-              email: firstWithDoctor.kineId.userId.email
-            });
-          }
 
           const mappedRdvs = rdvs.map((rdv: { _id: string; date: string; statut: string; kineId?: { userId?: { prenom: string; nom: string }; specialite?: string } }) => {
             const rdvDate = new Date(rdv.date);
@@ -124,15 +114,29 @@ const PatientDashboard = () => {
           });
           setAppointments(mappedRdvs);
         }
+
+        // 3. Récupérer le Plan de Traitement pour afficher le Kiné (Source prioritaire)
+        const plansRes = await axios.get(`${API_BASE_URL}/plans-traitement/patient/${patientId}`, config);
+
+        if (plansRes.data.success && plansRes.data.data && plansRes.data.data.length > 0) {
+          // STRICT: Seul un plan 'en_cours' définit le kiné assigné
+          const activePlan = plansRes.data.data.find((p: any) => p.statut === 'en cours');
+
+          if (activePlan && activePlan.kineId && activePlan.kineId.userId) {
+            const kineUser = activePlan.kineId.userId;
+            setDoctor({
+              name: `Dr. ${kineUser.prenom} ${kineUser.nom}`,
+              email: kineUser.email
+            });
+          }
+        }
       }
     } catch (err) {
       console.error("Erreur chargement dashboard:", err);
-      // Si 404 sur patient, c'est peut-être un nouveau compte sans profil patient
       if ((err as { response?: { status?: number } }).response?.status === 404) {
-        // Pas d'erreur fatale, juste pas de données
         setAppointments([]);
       } else {
-        setError("Impossible de charger vos rendez-vous.");
+        setError("Impossible de charger vos données.");
       }
     } finally {
       setIsLoading(false);

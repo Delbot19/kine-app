@@ -19,3 +19,6 @@ build/
 # Ignorer les fichiers système (Linux/macOS/Windows)
 .DS_Store
 Thumbs.db
+
+# Ignorer projet reference
+project-start-joy/

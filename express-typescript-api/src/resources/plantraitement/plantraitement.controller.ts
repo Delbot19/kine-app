@@ -4,6 +4,7 @@ import { createPlanTraitementSchema, updatePlanTraitementSchema } from './plantr
 import zodValidator from '../../middleware/zod-validator.middleware'
 import authMiddleware from '../../middleware/auth.middleware'
 import jsonResponse from '../../utils/jsonResponse'
+import Kine from '../../models/kine.model'
 
 class PlanTraitementController {
     public path = '/plans-traitement'
@@ -43,7 +44,24 @@ class PlanTraitementController {
         next: NextFunction,
     ): Promise<Response | void> => {
         try {
-            const result = await this.planTraitementService.createPlanTraitement(req.body)
+            const { user } = req as any
+            if (!user || user.role !== 'kine') {
+                return res
+                    .status(403)
+                    .json(jsonResponse('Accès refusé: Réservé aux kinésithérapeutes', false))
+            }
+
+            const kine = await Kine.findOne({ userId: user.userId })
+            if (!kine) {
+                return res
+                    .status(404)
+                    .json(jsonResponse('Profil kiné introuvable pour cet utilisateur', false))
+            }
+
+            // Inject kineId into the input
+            const input = { ...req.body, kineId: kine._id }
+
+            const result = await this.planTraitementService.createPlanTraitement(input)
             if (result.success) {
                 return res
                     .status(201)

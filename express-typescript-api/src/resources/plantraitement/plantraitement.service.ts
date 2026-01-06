@@ -36,6 +36,14 @@ export default class PlanTraitementService {
 
     async getPlanTraitementById(id: string): Promise<PlanTraitementServiceResult> {
         const plan = await PlanTraitement.findById(id)
+            .populate({
+                path: 'kineId',
+                populate: { path: 'userId', select: 'nom prenom email' },
+            })
+            .populate({
+                path: 'patientId',
+                populate: { path: 'userId', select: 'nom prenom email' },
+            })
         if (!plan) return { success: false, message: 'Plan de traitement non trouvé.' }
         return { success: true, plan }
     }
@@ -46,7 +54,10 @@ export default class PlanTraitementService {
     }
 
     async getPlansByPatient(patientId: string): Promise<PlanTraitementServiceResult> {
-        const plans = await PlanTraitement.find({ patientId })
+        const plans = await PlanTraitement.find({ patientId }).populate({
+            path: 'kineId',
+            populate: { path: 'userId', select: 'nom prenom email' },
+        })
         return { success: true, plans }
     }
 

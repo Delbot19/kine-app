@@ -125,7 +125,10 @@ const AppointmentsPage = () => {
 
         // D. Smart Selection Logic
         if (activePlan) {
-          const kineForPlan = allKines.find(k => k._id === activePlan.kineId);
+          // Handle populated kineId
+          const activeKineId = typeof activePlan.kineId === 'object' ? (activePlan.kineId as any)._id : activePlan.kineId;
+          const kineForPlan = allKines.find(k => k._id === activeKineId);
+
           if (kineForPlan) {
             setSelectedKine(kineForPlan);
             setKineLocked(true);

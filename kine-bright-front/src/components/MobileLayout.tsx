@@ -2,7 +2,7 @@ import React from 'react';
 import { Heart, Calendar, BookOpen, User, Phone } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { useAuth } from '@/api/useAuth';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface MobileLayoutProps {
   children: React.ReactNode;
@@ -47,16 +47,15 @@ const MobileLayout = ({ children }: MobileLayoutProps) => {
           {navigationItems.map((item) => {
             const Icon = item.icon;
             const active = isActive(item.path);
-            
+
             return (
               <Link
                 key={item.path}
                 to={item.path}
-                className={`flex flex-col items-center py-2 px-1 transition-colors ${
-                  active 
-                    ? 'text-primary' 
+                className={`flex flex-col items-center py-2 px-1 transition-colors ${active
+                    ? 'text-primary'
                     : 'text-muted-foreground hover:text-foreground'
-                }`}
+                  }`}
               >
                 <Icon className={`h-5 w-5 mb-1 ${active ? 'text-primary' : ''}`} />
                 <span className="text-xs font-medium">{item.label}</span>
