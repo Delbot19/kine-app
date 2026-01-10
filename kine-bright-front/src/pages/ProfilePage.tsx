@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import Layout from "@/components/layout/Layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -84,7 +83,6 @@ const ProfilePage = () => {
             setPractitioner({
               name: `Dr. ${kineUser.prenom} ${kineUser.nom}`,
               email: kineUser.email,
-              phone: "0102030405", // Placeholder or fetch if available in kine model
               role: activePlan.kineId.specialite || "Kinésithérapeute"
             });
           }
@@ -177,18 +175,18 @@ const ProfilePage = () => {
 
   if (loading) {
     return (
-      <Layout>
+      <>
         <div className="flex justify-center items-center h-[60vh]">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
         </div>
-      </Layout>
+      </>
     );
   }
 
   if (!user || !patient) return null;
 
   return (
-    <Layout>
+    <>
       <div className="space-y-6">
         {/* Back Button */}
         <Link
@@ -430,10 +428,7 @@ const ProfilePage = () => {
                       </div>
                     </div>
                     <div className="space-y-2">
-                      <div className="flex items-center gap-2 text-sm">
-                        <Phone className="h-4 w-4 text-muted-foreground" />
-                        <span className="text-foreground">{practitioner.phone || 'Non renseigné'}</span>
-                      </div>
+
                       <div className="flex items-center gap-2 text-sm">
                         <Mail className="h-4 w-4 text-muted-foreground" />
                         <span className="text-foreground">{practitioner.email}</span>
@@ -452,7 +447,7 @@ const ProfilePage = () => {
           </div>
         </div>
       </div>
-    </Layout>
+    </>
   );
 };
 

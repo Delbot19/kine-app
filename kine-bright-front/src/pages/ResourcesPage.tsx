@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from 'react';
-import Layout from '@/components/layout/Layout';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -111,7 +110,7 @@ const ResourcesPage = () => {
   };
 
   return (
-    <Layout>
+    <>
       <div className="min-h-screen bg-background py-6 px-4 md:px-6">
         <div className="max-w-6xl mx-auto space-y-8 animate-in fade-in duration-500">
 
@@ -413,7 +412,7 @@ const ResourcesPage = () => {
 
         </div>
       </div>
-    </Layout>
+    </>
   );
 };
 

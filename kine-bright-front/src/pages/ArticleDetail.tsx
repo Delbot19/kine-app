@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from 'react';
-import Layout from "@/components/layout/Layout";
 import { ArrowLeft, Clock, Calendar, User, Tag } from "lucide-react";
 import { Link, useParams } from "react-router-dom";
 import { resourceService } from '@/api/resource.service';
@@ -30,7 +29,7 @@ const ArticleDetail = () => {
 
   if (loading) {
     return (
-      <Layout>
+      <>
         <div className="min-h-screen bg-background py-6 px-4 md:px-6">
           <div className="max-w-4xl mx-auto space-y-8">
             <div className="h-8 w-48 bg-muted animate-pulse rounded" />
@@ -42,13 +41,13 @@ const ArticleDetail = () => {
             </div>
           </div>
         </div>
-      </Layout>
+      </>
     );
   }
 
   if (!article) {
     return (
-      <Layout>
+      <>
         <div className="min-h-screen bg-background py-6 px-4 md:px-6">
           <div className="max-w-4xl mx-auto text-center">
             <h1 className="text-2xl font-bold text-foreground mb-4">Article non trouvé</h1>
@@ -57,7 +56,7 @@ const ArticleDetail = () => {
             </Link>
           </div>
         </div>
-      </Layout>
+      </>
     );
   }
 
@@ -74,7 +73,7 @@ const ArticleDetail = () => {
   const contentParagraphs = (article.contenu || '').split('\n\n');
 
   return (
-    <Layout>
+    <>
       <div className="min-h-screen bg-background py-8 px-4 md:px-6">
         <div className="max-w-4xl mx-auto animate-in fade-in duration-500">
           {/* Back link */}
@@ -147,7 +146,7 @@ const ArticleDetail = () => {
           )}
         </div>
       </div>
-    </Layout>
+    </>
   );
 };
 

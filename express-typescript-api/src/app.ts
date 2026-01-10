@@ -6,6 +6,7 @@ import compression from 'compression'
 import type Controller from '@utils/interfaces/controller.interface'
 import errorMiddleware from '@middleware/error.middleware'
 import cookieParser from 'cookie-parser'
+import ContactController from '@/resources/contact/contact.controller'
 import logger from './config/logger'
 
 class App {
@@ -17,6 +18,8 @@ class App {
         this.port = port
         this.initializeMiddleware()
         this.initializeControllers(controllers)
+        // Add specific manual route for contact since it might not follow the Controller interface strict class pattern or simplify integration
+        this.express.use('/api', ContactController)
         this.initializeErrorHandling()
     }
 

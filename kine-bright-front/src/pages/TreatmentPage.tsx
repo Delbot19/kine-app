@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Calendar, Clock, Stethoscope, Target } from "lucide-react";
-import Layout from "@/components/layout/Layout";
 import ObjectiveCard from "@/components/ObjectiveCard";
 import SessionTimeline, { TimelineSession } from "@/components/SessionTimeline";
 import ProgressSummary from "@/components/ProgressSummary";
@@ -131,11 +130,11 @@ const TreatmentPage = () => {
 
   if (loading) {
     return (
-      <Layout>
+      <>
         <div className="flex h-[50vh] items-center justify-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
         </div>
-      </Layout>
+      </>
     );
   }
 
@@ -146,7 +145,7 @@ const TreatmentPage = () => {
   const startDateFormatted = plan ? format(new Date(plan.createdAt), 'd MMMM yyyy', { locale: fr }) : '-';
 
   return (
-    <Layout>
+    <>
       <div className="space-y-2 animate-in fade-in duration-500">
         <Button
           variant="ghost"
@@ -246,7 +245,7 @@ const TreatmentPage = () => {
           </section>
         )}
       </div>
-    </Layout>
+    </>
   );
 };
 

@@ -3,8 +3,10 @@ import Header from './Header';
 import Navbar from './Navbar';
 import Footer from './Footer';
 
+import { Outlet } from 'react-router-dom';
+
 interface LayoutProps {
-  children: React.ReactNode;
+  children?: React.ReactNode;
 }
 
 /**
@@ -25,20 +27,20 @@ const Layout = ({ children }: LayoutProps) => {
   return (
     <div className="min-h-screen bg-gradient-subtle flex flex-col">
       {/* Header fixe */}
-      <Header 
-        onMenuToggle={handleMenuToggle} 
-        isMobileMenuOpen={isMobileMenuOpen} 
+      <Header
+        onMenuToggle={handleMenuToggle}
+        isMobileMenuOpen={isMobileMenuOpen}
       />
-      
+
       {/* Navigation mobile uniquement */}
-      <Navbar 
-        isMobileMenuOpen={isMobileMenuOpen} 
-        onMobileMenuClose={handleMobileMenuClose} 
+      <Navbar
+        isMobileMenuOpen={isMobileMenuOpen}
+        onMobileMenuClose={handleMobileMenuClose}
       />
 
       {/* Contenu principal */}
       <main className="flex-1 container mx-auto px-4 py-8">
-        {children}
+        {children || <Outlet />}
       </main>
 
       {/* Footer */}

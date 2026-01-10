@@ -16,6 +16,7 @@ const MobileLayout = ({ children }: MobileLayoutProps) => {
     { icon: Calendar, label: 'RDV', path: '/appointments' },
     { icon: BookOpen, label: 'Ressources', path: '/resources' },
     { icon: User, label: 'Profil', path: '/profile' },
+    { icon: BookOpen, label: 'À propos', path: '/about' },
     { icon: Phone, label: 'Contact', path: '/contact' },
   ];
 
@@ -53,8 +54,8 @@ const MobileLayout = ({ children }: MobileLayoutProps) => {
                 key={item.path}
                 to={item.path}
                 className={`flex flex-col items-center py-2 px-1 transition-colors ${active
-                    ? 'text-primary'
-                    : 'text-muted-foreground hover:text-foreground'
+                  ? 'text-primary'
+                  : 'text-muted-foreground hover:text-foreground'
                   }`}
               >
                 <Icon className={`h-5 w-5 mb-1 ${active ? 'text-primary' : ''}`} />

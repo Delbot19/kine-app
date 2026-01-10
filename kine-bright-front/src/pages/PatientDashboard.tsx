@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import Layout from '@/components/layout/Layout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -216,19 +215,19 @@ const PatientDashboard = () => {
   // Affichage du loading
   if (isLoading) {
     return (
-      <Layout>
+      <>
         <div className="flex items-center justify-center min-h-[400px]">
           <div className="text-center space-y-4">
             <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto" />
             <p className="text-muted-foreground">Chargement de vos données...</p>
           </div>
         </div>
-      </Layout>
+      </>
     );
   }
 
   return (
-    <Layout>
+    <>
       <div className="space-y-8">
         {/* Message d'erreur si nécessaire */}
         {error && (
@@ -412,7 +411,7 @@ const PatientDashboard = () => {
           </div>
         </div>
       </div>
-    </Layout>
+    </>
   );
 };
 

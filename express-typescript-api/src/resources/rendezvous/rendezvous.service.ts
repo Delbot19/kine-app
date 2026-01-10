@@ -3,11 +3,7 @@ import RendezVous from '../../models/rendezvous.model'
 import type { CreateRendezVousInput, UpdateRendezVousInput } from './rendezvous.interface'
 import Patient from '../../models/patient.model'
 import Kine from '../../models/kine.model'
-import {
-    CABINET_OPENING_HOUR,
-    CABINET_CLOSING_HOUR,
-    CABINET_OPEN_DAYS,
-} from '../../config/cabinetHours'
+import { CABINET_SCHEDULE, CABINET_OPEN_DAYS } from '../../config/cabinetHours'
 
 interface RendezVousServiceResult {
     success: boolean
@@ -30,12 +26,18 @@ export default class RendezVousService {
         const heureDebut = debut.getHours() + debut.getMinutes() / 60
         const heureFin = fin.getHours() + fin.getMinutes() / 60
 
-        if (
-            !CABINET_OPEN_DAYS.includes(day) ||
-            heureDebut < CABINET_OPENING_HOUR ||
-            heureFin > CABINET_CLOSING_HOUR
-        ) {
-            return { success: false, message: 'Le cabinet est fermé à cet horaire.' }
+        const schedule = CABINET_SCHEDULE[day]
+
+        if (!schedule?.open) {
+            return { success: false, message: 'Le cabinet est fermé ce jour-là.' }
+        }
+
+        // Check exact hours
+        if (heureDebut < schedule.start || heureFin > schedule.end) {
+            return {
+                success: false,
+                message: `Hors horaires d'ouverture (${schedule.start}h - ${schedule.end}h le ${day === 6 ? 'samedi' : 'semaine'}).`,
+            }
         }
         // Vérifier qu'il n'y a pas déjà un RDV à ce créneau pour ce kiné
         // On ignore les RDV annulés car ils ne bloquent plus le créneau
@@ -231,8 +233,8 @@ export default class RendezVousService {
     // Helper pour exposer les horaires d'ouverture au front
     static getCabinetHours(): { openingHour: number; closingHour: number; openDays: number[] } {
         return {
-            openingHour: CABINET_OPENING_HOUR,
-            closingHour: CABINET_CLOSING_HOUR,
+            openingHour: 8, // General start for frontend (min)
+            closingHour: 18, // General end for frontend (max)
             openDays: CABINET_OPEN_DAYS,
         }
     }

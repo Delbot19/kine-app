@@ -31,6 +31,7 @@ const Navbar = ({ isMobileMenuOpen, onMobileMenuClose }: NavbarProps) => {
     { icon: FileText, label: 'Mes exercices', path: '/exercises' },
     { icon: BookOpen, label: 'Ressources éducatives', path: '/resources' },
     { icon: User, label: 'Mon profil', path: '/profile' },
+    { icon: BookOpen, label: 'À propos', path: '/about' },
     { icon: Phone, label: 'Contact', path: '/contact' },
   ];
 

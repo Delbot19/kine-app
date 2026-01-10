@@ -3,7 +3,6 @@
 import React, { useState, useEffect } from "react";
 import { ArrowLeft, Loader2 } from "lucide-react";
 import { Link } from "react-router-dom";
-import Layout from "@/components/layout/Layout";
 import { Badge } from "@/components/ui/badge";
 import DailyProgress from "@/components/exercises/DailyProgress";
 import ExerciseCard from "@/components/exercises/ExerciseCard";
@@ -96,19 +95,19 @@ const PatientExercises = () => {
 
   if (isLoading) {
     return (
-      <Layout>
+      <>
         <div className="flex items-center justify-center min-h-[400px]">
           <div className="text-center space-y-4">
             <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto" />
             <p className="text-muted-foreground">Chargement de votre programme...</p>
           </div>
         </div>
-      </Layout>
+      </>
     );
   }
 
   return (
-    <Layout>
+    <>
       {/* Header avec navigation */}
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-4">
@@ -168,7 +167,7 @@ const PatientExercises = () => {
       {totalCount > 0 && (
         <EncouragementBanner completedCount={completedCount} totalCount={totalCount} />
       )}
-    </Layout>
+    </>
   );
 };
 

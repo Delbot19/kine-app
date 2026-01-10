@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import Layout from '@/components/layout/Layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ChevronLeft, ChevronRight, Check, Calendar as CalendarIcon, Clock, Phone, ArrowLeft, Mail, HandHelping, Loader2 } from 'lucide-react';
@@ -62,14 +61,14 @@ const AppointmentsPage = () => {
   // Génération des horaires (08:00 - 16:30)
   const timeSlots = [
     "08:00", "08:30", "09:00", "09:30", "10:00", "10:30",
-    "11:00", "11:30", "14:00", "14:30", "15:00", "15:30",
-    "16:00", "16:30"
+    "11:00", "11:30", "12:00", "12:30", "14:00", "14:30",
+    "15:00", "15:30", "16:00", "16:30", "17:00", "17:30"
   ];
 
   // Helper: Generate days for current view
   const getWeekDays = () => {
     const days = [];
-    for (let i = 0; i < 5; i++) { // Monday to Friday
+    for (let i = 0; i < 6; i++) { // Monday to Saturday
       days.push(addDays(currentWeekStart, i));
     }
     return days;
@@ -201,6 +200,15 @@ const AppointmentsPage = () => {
     // 1. Check if slot is in the past
     if (isBefore(slotDateTime, now)) return 'occupied'; // Using 'occupied' style for past slots
 
+    // 1b. Check Specific Hours (Saturday closing at 13:00)
+    const dayIndex = dayDate.getDay(); // 0-6 (0=Sun, 6=Sat)
+    if (dayIndex === 6) {
+      // Saturday logic: Closed after 13:00 (last slot likely 12:30)
+      // If time >= 13:00, block it.
+      // Or if checking strictly slots: 12:30 is OK (ends at 13:00). 13:00 is not OK (ends at 13:30).
+      if (hours >= 13) return 'occupied'; // Block 13:00 and later
+    }
+
     // 2. Check if selected
     if (selectedSlot && isSameDay(selectedSlot.date, dayDate) && selectedSlot.time === time) {
       return 'selected';
@@ -276,18 +284,18 @@ const AppointmentsPage = () => {
 
   if (loading && !patientId) {
     return (
-      <Layout>
+      <>
         <div className="flex justify-center items-center h-[60vh]">
           <Loader2 className="h-10 w-10 animate-spin text-primary" />
         </div>
-      </Layout>
+      </>
     );
   }
 
   const weekRangeLabel = `${format(currentWeekStart, 'd', { locale: fr })}-${format(addDays(currentWeekStart, 4), 'd MMMM yyyy', { locale: fr })}`;
 
   return (
-    <Layout>
+    <>
       <div className="space-y-6 max-w-6xl mx-auto">
         {/* En-tête avec bouton retour */}
         <div className="space-y-4">
@@ -379,7 +387,7 @@ const AppointmentsPage = () => {
                 <div className="overflow-x-auto">
                   <div className="min-w-[500px]">
                     {/* En-têtes Jours */}
-                    <div className="grid grid-cols-6 gap-2 mb-4">
+                    <div className="grid grid-cols-7 gap-2 mb-4">
                       <div className="text-center pt-8 text-sm font-medium text-muted-foreground">
                         Horaires
                       </div>
@@ -397,7 +405,7 @@ const AppointmentsPage = () => {
 
                     {/* Lignes Horaires */}
                     {timeSlots.map((time) => (
-                      <div key={time} className="grid grid-cols-6 gap-2 mb-2">
+                      <div key={time} className="grid grid-cols-7 gap-2 mb-2">
                         <div className="flex items-center justify-center text-sm text-muted-foreground bg-slate-50 rounded-md">
                           <Clock className="w-3 h-3 mr-1.5" />
                           {time}
@@ -516,7 +524,7 @@ const AppointmentsPage = () => {
           </div>
         </div>
       </div>
-    </Layout>
+    </>
   );
 };
 
