@@ -64,7 +64,7 @@ export interface RegisterResponse {
 interface AuthContextType {
   user: User | null;
   isLoading: boolean;
-  login: (credentials: LoginRequest) => Promise<{ success: boolean; error?: string }>;
+  login: (credentials: LoginRequest) => Promise<{ success: boolean; error?: string; user?: User }>;
   register: (userData: RegisterRequest) => Promise<{ success: boolean; error?: string; user?: User; patient?: RegisterResponse['data']['patient'] }>;
   logout: () => void;
   checkAuth: () => boolean;
@@ -87,9 +87,37 @@ interface AuthProviderProps {
 }
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true); // Start loading true to check auth
   const [user, setUser] = useState<User | null>(null);
   const { toast } = useToast();
+
+  // Restore session on mount
+  React.useEffect(() => {
+    const initAuth = async () => {
+      const token = localStorage.getItem('authToken');
+      if (!token) {
+        setIsLoading(false);
+        return;
+      }
+
+      try {
+        const response = await axios.get(`${API_BASE_URL}/auth/me`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        if (response.data.success) {
+          setUser(response.data.data);
+        } else {
+          localStorage.removeItem('authToken');
+        }
+      } catch (error) {
+        console.error("Session restoration failed", error);
+        localStorage.removeItem('authToken');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    initAuth();
+  }, []);
 
   const login = useCallback(
     async (credentials: LoginRequest) => {
@@ -110,7 +138,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             description: `Bienvenue ${data.user.prenom} ${data.user.nom}`,
           });
 
-          return { success: true };
+          return { success: true, user: data.user };
         } else {
           throw new Error(data.message || "Erreur de connexion");
         }

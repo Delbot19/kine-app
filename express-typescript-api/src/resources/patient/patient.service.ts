@@ -97,10 +97,42 @@ export default class PatientService {
         if (!patient) {
             return { success: false, message: 'Patient non trouvé.' }
         }
-        if (role !== RoleEnum.ADMIN && String(patient.userId) !== String(userId)) {
+        if (
+            role !== RoleEnum.ADMIN &&
+            role !== RoleEnum.KINE &&
+            String(patient.userId) !== String(userId)
+        ) {
             return { success: false, message: 'Accès refusé.' }
         }
-        const updated = await Patient.findByIdAndUpdate(patient._id, input, { new: true })
+
+        // --- NEW TERMINATION LOGIC ---
+        // Clone input to avoid param-reassignment lint error
+        const updateInput = { ...input }
+
+        // If status is changing to 'termine'
+        // Note: Field name mismatch handling. Input usually matches schema (statut).
+        const newStatus = (input as any).statut || (input as any).status
+        if (newStatus === 'termine' && patient.kineId) {
+            // 1. Release Patient (Set kineId to null)
+            const kineIdToRelease = patient.kineId
+
+            // 2. Identify and Close Active Treatment Plan
+            const PlanTraitement = (await import('../../models/plantraitement.model')).default
+            await PlanTraitement.updateMany(
+                {
+                    patientId: patient._id,
+                    kineId: kineIdToRelease,
+                    statut: 'en cours',
+                },
+                { statut: 'terminé' },
+            )
+
+            // 3. Free the patient
+            ;(updateInput as any).kineId = null
+        }
+        // -----------------------------
+
+        const updated = await Patient.findByIdAndUpdate(patient._id, updateInput, { new: true })
         return { success: true, message: 'Patient mis à jour.', patient: updated }
     }
 

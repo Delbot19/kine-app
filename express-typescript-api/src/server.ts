@@ -12,8 +12,6 @@ import AdminController from './resources/admin/admin.controller'
 import PlanTraitementController from './resources/plantraitement/plantraitement.controller'
 import ExerciseController from './resources/exercise/exercise.controller'
 import RessourceEducativeController from './resources/ressourceeducative/ressourceeducative.controller'
-import autoCancelRendezVousJob from './jobs/autoCancelRendezVous'
-import logger from './config/logger'
 
 validateEnv()
 
@@ -34,14 +32,6 @@ const start = async (): Promise<void> => {
         Number(process.env.PORT ?? DEFAULT_ENV.PORT),
     )
     app.listen()
-    // Lancer le job d'annulation automatique toutes les 5 minutes
-    setInterval(
-        () => {
-            logger.info('Lancement du job autoCancelRendezVousJob')
-            autoCancelRendezVousJob().catch(logger.error)
-        },
-        5 * 60 * 1000,
-    )
 }
 
 void start()

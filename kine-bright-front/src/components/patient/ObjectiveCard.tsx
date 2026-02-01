@@ -1,6 +1,6 @@
 import { Heart, TrendingUp, Dumbbell, LucideIcon } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import ProgressBar from "@/components/ProgressBar";
+import ProgressBar from "@/components/patient/ProgressBar";
 import { cn } from "@/lib/utils";
 
 interface ObjectiveCardProps {

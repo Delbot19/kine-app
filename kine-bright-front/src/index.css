@@ -21,6 +21,11 @@
     --accent-foreground: 222 84% 5%;
     --destructive: 0 84% 60%;
     --destructive-foreground: 210 40% 98%;
+    --destructive-foreground: 210 40% 98%;
+    --success: 142 76% 36%;
+    --success-foreground: 355 100% 97%;
+    --warning: 48 96% 53%;
+    --warning-foreground: 222 47% 11%;
     --border: 214 32% 91%;
     --input: 214 32% 91%;
     --ring: 210 100% 45%;
@@ -46,7 +51,7 @@
     /* Ombres médicales */
     --shadow-medical: 0 10px 30px -10px hsl(210 100% 45% / 0.2);
     --shadow-card: 0 4px 6px -1px hsl(210 100% 45% / 0.1);
-    
+
     /* Border radius */
     --radius: 0.5rem;
   }
@@ -69,6 +74,11 @@
     --accent-foreground: 210 40% 98%;
     --destructive: 0 62% 30%;
     --destructive-foreground: 210 40% 98%;
+    --destructive-foreground: 210 40% 98%;
+    --success: 142 70% 50%;
+    --success-foreground: 144 100% 97%;
+    --warning: 48 96% 53%;
+    --warning-foreground: 222 47% 11%;
     --border: 217 32% 17%;
     --input: 217 32% 17%;
     --ring: 210 100% 65%;
@@ -92,6 +102,7 @@
   * {
     @apply border-border;
   }
+
   body {
     @apply bg-background text-foreground;
   }

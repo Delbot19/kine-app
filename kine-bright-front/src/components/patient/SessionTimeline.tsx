@@ -21,7 +21,7 @@ const SessionTimeline = ({ sessions, className }: SessionTimelineProps) => {
       case "completed":
         return <CheckCircle2 className="h-5 w-5 text-primary-foreground" />;
       case "current":
-        return <Clock className="h-5 w-5 text-primary-foreground" />;
+        return <Clock className="h-5 w-5 text-primary" />;
       default:
         return <Circle className="h-5 w-5 text-muted-foreground" />;
     }
@@ -30,8 +30,9 @@ const SessionTimeline = ({ sessions, className }: SessionTimelineProps) => {
   const getIconBackground = (status: TimelineSession["status"]) => {
     switch (status) {
       case "completed":
-      case "current":
         return "bg-primary";
+      case "current":
+        return "bg-blue-100 border-2 border-primary";
       default:
         return "bg-muted border-2 border-border";
     }

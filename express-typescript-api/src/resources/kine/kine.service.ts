@@ -104,6 +104,15 @@ export default class KineService {
         return { success: true, message: 'Kiné trouvé.', kine }
     }
 
+    async getMe(userId: string): Promise<KineServiceResult> {
+        // Simple helper for authenticated user to get their own profile
+        const kine = await Kine.findOne({ userId }).populate('userId')
+        if (!kine) {
+            return { success: false, message: 'Profil kiné non trouvé pour cet utilisateur.' }
+        }
+        return { success: true, message: 'Mon profil kiné.', kine }
+    }
+
     async getAllKines(role: string): Promise<KineServiceResult> {
         // Allow public/patient access
         const kines = await Kine.find().populate('userId')

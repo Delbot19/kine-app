@@ -1,5 +1,5 @@
 import { Trophy } from "lucide-react";
-import ProgressBar from "@/components/ProgressBar";
+import ProgressBar from "@/components/patient/ProgressBar";
 
 interface DailyProgressProps {
   completedCount: number;

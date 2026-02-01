@@ -5,8 +5,8 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import AppointmentCard from '@/components/cards/AppointmentCard';
-import ProfileCard from '@/components/cards/ProfileCard';
+import AppointmentCard from '@/components/patient/AppointmentCard';
+import ProfileCard from '@/components/patient/ProfileCard';
 import {
   Calendar,
   Clock,
@@ -46,6 +46,7 @@ interface Appointment {
   specialty: string;
   location: string;
   status: 'confirmé' | 'en_attente' | 'annulé' | 'à venir' | 'en attente' | 'terminé';
+  kineId?: string;
 }
 
 /**
@@ -70,10 +71,13 @@ const PatientDashboard = () => {
   };
 
   // Chargement des données réelles
-  const loadData = async () => {
-    if (!user) return;
+  const loadData = async (isBackground = false) => {
+    if (!user) {
+      setIsLoading(false);
+      return;
+    }
 
-    setIsLoading(true);
+    if (!isBackground) setIsLoading(true);
     setError(null);
 
     try {
@@ -98,7 +102,7 @@ const PatientDashboard = () => {
         if (rdvsRes.data.success) {
           const rdvs = rdvsRes.data.data;
 
-          const mappedRdvs = rdvs.map((rdv: { _id: string; date: string; statut: string; kineId?: { userId?: { prenom: string; nom: string }; specialite?: string } }) => {
+          const mappedRdvs = rdvs.map((rdv: { _id: string; date: string; statut: string; kineId?: { _id: string; userId?: { prenom: string; nom: string }; specialite?: string } }) => {
             const rdvDate = new Date(rdv.date);
             return {
               id: rdv._id,
@@ -106,6 +110,7 @@ const PatientDashboard = () => {
               rawDate: rdvDate,
               time: format(rdvDate, 'HH:mm'),
               doctor: rdv.kineId?.userId ? `Dr. ${rdv.kineId.userId.prenom} ${rdv.kineId.userId.nom}` : 'Non assigné',
+              kineId: rdv.kineId?._id, // Add kineId for availability check
               specialty: rdv.kineId?.specialite || 'Kinésithérapie',
               location: 'Cabinet PhysioCenter',
               status: rdv.statut as 'confirmé' | 'en_attente' | 'annulé' | 'à venir' | 'en attente' | 'terminé'
@@ -144,6 +149,10 @@ const PatientDashboard = () => {
 
   useEffect(() => {
     loadData();
+
+    // Auto-refresh every 30 seconds
+    const intervalId = setInterval(() => loadData(true), 30000);
+    return () => clearInterval(intervalId);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 
@@ -252,17 +261,29 @@ const PatientDashboard = () => {
 
         {/* Actions rapides avec effet Glassmorphism */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <Link to="/appointments">
-            <Card className="cursor-pointer transition-all duration-300 group bg-white/40 backdrop-blur-md border-white/20 hover:bg-white/60 hover:shadow-medical hover:-translate-y-1">
+          {appointments.length === 0 ? (
+            <Link to="/appointments">
+              <Card className="cursor-pointer transition-all duration-300 group bg-white/40 backdrop-blur-md border-white/20 hover:bg-white/60 hover:shadow-medical hover:-translate-y-1">
+                <CardContent className="p-6 text-center space-y-3">
+                  <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mx-auto group-hover:scale-110 transition-transform">
+                    <Plus className="h-6 w-6 text-primary" />
+                  </div>
+                  <h3 className="font-semibold text-foreground">Nouveau RDV</h3>
+                  <p className="text-sm text-muted-foreground">Prendre un nouveau rendez-vous</p>
+                </CardContent>
+              </Card>
+            </Link>
+          ) : (
+            <Card className="cursor-not-allowed bg-slate-100 border-white/20 opacity-80" title="Vous avez déjà un rendez-vous à venir.">
               <CardContent className="p-6 text-center space-y-3">
-                <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mx-auto group-hover:scale-110 transition-transform">
-                  <Plus className="h-6 w-6 text-primary" />
+                <div className="w-12 h-12 bg-slate-200 rounded-full flex items-center justify-center mx-auto">
+                  <Calendar className="h-6 w-6 text-slate-400" />
                 </div>
-                <h3 className="font-semibold text-foreground">Nouveau RDV</h3>
-                <p className="text-sm text-muted-foreground">Prendre un nouveau rendez-vous</p>
+                <h3 className="font-semibold text-slate-600">Rendez-vous programmé</h3>
+                <p className="text-sm text-slate-500">Gérez vos prochains RDV avec votre kiné.</p>
               </CardContent>
             </Card>
-          </Link>
+          )}
 
           <Link to="/treatment">
             <Card className="cursor-pointer transition-all duration-300 group bg-white/40 backdrop-blur-md border-white/20 hover:bg-white/60 hover:shadow-medical hover:-translate-y-1">

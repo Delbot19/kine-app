@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Calendar, Clock, Stethoscope, Target } from "lucide-react";
-import ObjectiveCard from "@/components/ObjectiveCard";
-import SessionTimeline, { TimelineSession } from "@/components/SessionTimeline";
-import ProgressSummary from "@/components/ProgressSummary";
+import ObjectiveCard from "@/components/patient/ObjectiveCard";
+import SessionTimeline, { TimelineSession } from "@/components/patient/SessionTimeline";
+import ProgressSummary from "@/components/patient/ProgressSummary";
 import { useAuth } from "@/contexts/AuthContext";
 import axios from "axios";
 import { format, differenceInWeeks, isPast, isFuture } from 'date-fns';
@@ -97,7 +97,7 @@ const TreatmentPage = () => {
               if (isNext) status = 'current';
 
               // Handle Rich Motif
-              let title = "Séance de suivi";
+              let title = "Consultation - Nouveau RDV";
               let description = rdv.kineId?.specialite || "Consultation de kinésithérapie";
 
               if (typeof rdv.motif === 'string') {
@@ -126,6 +126,10 @@ const TreatmentPage = () => {
     };
 
     fetchData();
+
+    // Auto-refresh every 30 seconds
+    const intervalId = setInterval(fetchData, 30000);
+    return () => clearInterval(intervalId);
   }, [user]);
 
   if (loading) {

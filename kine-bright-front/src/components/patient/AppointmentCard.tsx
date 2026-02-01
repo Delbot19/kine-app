@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { Calendar, Clock, User, MapPin } from 'lucide-react';
+import { Calendar, Clock, User, MapPin, Loader2 } from 'lucide-react';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -35,6 +36,7 @@ interface AppointmentCardProps {
     location: string;
     status: 'confirmé' | 'en_attente' | 'annulé' | 'à venir' | 'en attente' | 'terminé';
     rawDate?: Date;
+    kineId?: string;
   };
   variant?: 'default' | 'hero';
   onCancel?: (id: string) => void;
@@ -56,6 +58,62 @@ const AppointmentCard = ({ appointment, variant = 'default', onCancel, onModify 
   const [modifyTime, setModifyTime] = useState(format(initialDate, 'HH:mm'));
   const [modifyError, setModifyError] = useState<string | null>(null);
 
+  // Slots Management
+  const [availableSlots, setAvailableSlots] = useState<string[]>([]);
+  const [isLoadingSlots, setIsLoadingSlots] = useState(false);
+
+  // Fetch slots on date change
+  React.useEffect(() => {
+    if (showModifyDialog && appointment.kineId) {
+      const fetchSlots = async () => {
+        setIsLoadingSlots(true);
+        try {
+          const token = localStorage.getItem('authToken');
+          // Fetch appointments for that day (+/- context? Here we simplify to fetch all day)
+          // Or actually, reuse logic: fetch day's appointment for Kine
+          // NOTE: We need axios import here if not present, passing via props is safer but let's assume global axios or import
+          // Since this file doesn't have axios import yet, we must add it.
+          // OR better: we implement logic based on 'getRendezVousByKineAndDate' endpoint
+
+          const res = await fetch(`http://localhost:8000/api/rdvs?kineId=${appointment.kineId}&date=${modifyDate}`, {
+            headers: { Authorization: `Bearer ${token}` }
+          });
+          const data = await res.json();
+
+          let takenSlots: string[] = [];
+          if (data.success && data.data) {
+            takenSlots = data.data
+              .filter((r: any) => r.statut !== 'annulé' && r._id !== appointment.id) // Exclude self if modification
+              .map((r: any) => format(new Date(r.date), 'HH:mm'));
+          }
+
+          // Generate all slots
+          const slots = [];
+          // Morning: 08:00 - 12:00 (last slot start 11:30)
+          for (let h = 8; h < 12; h++) {
+            slots.push(`${h.toString().padStart(2, '0')}:00`);
+            slots.push(`${h.toString().padStart(2, '0')}:30`);
+          }
+          // Afternoon: 14:00 - 18:00 (last slot start 17:30)
+          for (let h = 14; h < 18; h++) {
+            slots.push(`${h.toString().padStart(2, '0')}:00`);
+            slots.push(`${h.toString().padStart(2, '0')}:30`);
+          }
+
+          // Filter taken
+          const free = slots.filter(s => !takenSlots.includes(s));
+          setAvailableSlots(free);
+
+        } catch (e) {
+          console.error("Error fetching slots", e);
+        } finally {
+          setIsLoadingSlots(false);
+        }
+      };
+      fetchSlots();
+    }
+  }, [modifyDate, showModifyDialog, appointment.kineId, appointment.id]);
+
   const getStatusVariant = (status: string) => {
     switch (status) {
       case 'confirmé':
@@ -63,7 +121,7 @@ const AppointmentCard = ({ appointment, variant = 'default', onCancel, onModify 
         return isHero ? 'default' : 'default';
       case 'en_attente':
       case 'en attente':
-        return 'secondary';
+        return 'destructive';
       case 'annulé':
         return 'destructive';
       case 'terminé':
@@ -256,24 +314,37 @@ const AppointmentCard = ({ appointment, variant = 'default', onCancel, onModify 
                   required
                 />
               </div>
+
+              {/* Time Slots Grid */}
               <div className="grid gap-2">
-                <Label htmlFor="time">Heure</Label>
-                <Input
-                  id="time"
-                  type="time"
-                  step="1800"
-                  value={modifyTime}
-                  onChange={(e) => {
-                    setModifyTime(e.target.value);
-                    setModifyError(null);
-                  }}
-                  min="09:00"
-                  max="19:00"
-                  required
-                />
-                <p className="text-xs text-muted-foreground">
-                  Horaires : 09h00 - 12h00 et 14h00 - 19h00 (par 30 min)
-                </p>
+                <Label>Horaires disponibles</Label>
+                {isLoadingSlots ? (
+                  <div className="flex justify-center p-4"><Loader2 className="animate-spin h-6 w-6 text-primary" /></div>
+                ) : (
+                  <ScrollArea className="h-[200px] border rounded-md p-2">
+                    <div className="grid grid-cols-3 gap-2">
+                      {availableSlots.map((slot) => (
+                        <Button
+                          key={slot}
+                          type="button"
+                          variant={modifyTime === slot ? "default" : "outline"}
+                          className={modifyTime === slot ? "bg-primary text-white" : ""}
+                          onClick={() => {
+                            setModifyTime(slot);
+                            setModifyError(null);
+                          }}
+                        >
+                          {slot}
+                        </Button>
+                      ))}
+                      {availableSlots.length === 0 && (
+                        <div className="col-span-3 text-center text-muted-foreground text-sm py-4">
+                          Aucun créneau disponible pour cette date.
+                        </div>
+                      )}
+                    </div>
+                  </ScrollArea>
+                )}
                 {modifyError && (
                   <p className="text-sm text-destructive font-medium">{modifyError}</p>
                 )}
@@ -283,11 +354,11 @@ const AppointmentCard = ({ appointment, variant = 'default', onCancel, onModify 
               <Button type="button" variant="outline" onClick={() => setShowModifyDialog(false)}>
                 Annuler
               </Button>
-              <Button type="submit">Enregistrer</Button>
+              <Button type="submit" disabled={!modifyTime || isLoadingSlots}>Enregistrer</Button>
             </DialogFooter>
           </form>
         </DialogContent>
-      </Dialog>
+      </Dialog >
     </>
   );
 };

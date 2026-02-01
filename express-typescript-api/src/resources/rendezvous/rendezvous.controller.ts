@@ -36,7 +36,36 @@ class RendezVousController {
         this.router.delete('/:id', authMiddleware, this.deleteRendezVous)
         this.router.patch('/:id/confirm', authMiddleware, this.confirmRendezVous)
         this.router.patch('/:id/complete', authMiddleware, this.completeRendezVous)
+
         this.router.patch('/:id/cancel', authMiddleware, this.cancelRendezVous)
+        this.router.post('/cleanup', authMiddleware, this.cleanupAppointments)
+    }
+
+    private readonly cleanupAppointments = async (
+        req: Request,
+        res: Response,
+        next: NextFunction,
+    ): Promise<Response | void> => {
+        try {
+            const { user } = req as any
+            if (!user || user.role !== RoleEnum.KINE) {
+                return res
+                    .status(403)
+                    .json(jsonResponse('Accès réservé aux kinésithérapeutes', false))
+            }
+            // Must retrieve Kine ID from User ID
+            const Kine = (await import('../../models/kine.model')).default
+            const kine = await Kine.findOne({ userId: user.userId || user._id })
+
+            if (!kine) {
+                return res.status(404).json(jsonResponse('Profil kiné non trouvé', false))
+            }
+
+            const result = await this.rendezVousService.cleanupPastAppointments(String(kine._id))
+            return res.status(200).json(jsonResponse('Cleanup effectué', true, result))
+        } catch (error) {
+            next(error)
+        }
     }
 
     private readonly getCabinetHours = (
@@ -71,12 +100,18 @@ class RendezVousController {
                         .status(400)
                         .json(jsonResponse('Le champ kineId est requis pour un patient', false))
                 }
+                // Force status to 'en attente' for patients
+                body.statut = 'en attente'
             } else if (role === RoleEnum.KINE) {
                 body.kineId = userId
                 if (!body.patientId) {
                     return res
                         .status(400)
                         .json(jsonResponse('Le champ patientId est requis pour un kiné', false))
+                }
+                // Kines can determine status themselves (e.g. 'à venir')
+                if (!body.statut) {
+                    body.statut = 'en attente'
                 }
             } else {
                 return res
@@ -88,7 +123,7 @@ class RendezVousController {
                         ),
                     )
             }
-            const result = await this.rendezVousService.createRendezVous(body)
+            const result = await this.rendezVousService.createRendezVous(body, role)
             if (result.success) {
                 return res
                     .status(201)
@@ -110,11 +145,12 @@ class RendezVousController {
             if (!kineId || !date) {
                 return res.status(400).json(jsonResponse('kineId et date requis', false))
             }
-            // Ne retourner que les rendez-vous à venir
+            const onlyUpcoming = req.query.onlyUpcoming === 'true'
+
             const result = await this.rendezVousService.getRendezVousByKineAndDate(
                 String(kineId),
                 String(date),
-                { onlyUpcoming: true },
+                { onlyUpcoming },
             )
             if (result.success) {
                 return res
@@ -205,7 +241,10 @@ class RendezVousController {
     ): Promise<Response | void> => {
         try {
             const { id } = req.params
-            const result = await this.rendezVousService.updateRendezVous(id, req.body)
+            const { user } = req as any
+            const role = user?.role
+
+            const result = await this.rendezVousService.updateRendezVous(id, req.body, role)
             if (result.success) {
                 return res
                     .status(200)

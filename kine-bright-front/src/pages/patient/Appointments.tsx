@@ -38,6 +38,7 @@ interface RendezVous {
   _id: string;
   date: string; // ISO string
   duree: number;
+  statut?: string;
 }
 
 const AppointmentsPage = () => {
@@ -46,8 +47,18 @@ const AppointmentsPage = () => {
   const { user } = useAuth();
 
   // State for Calendar Navigation
-  // Initialize with today's date
-  const [currentWeekStart, setCurrentWeekStart] = useState<Date>(startOfWeek(new Date(), { weekStartsOn: 1 }));
+  // Initialize with today's date, but smart advance if weekend
+  const [currentWeekStart, setCurrentWeekStart] = useState<Date>(() => {
+    const now = new Date();
+    const day = now.getDay(); // 0=Sun, 6=Sat
+    const hours = now.getHours();
+
+    // If Sunday OR (Saturday AND >= 13h), jump to next week
+    if (day === 0 || (day === 6 && hours >= 13)) {
+      return startOfWeek(addWeeks(now, 1), { weekStartsOn: 1 });
+    }
+    return startOfWeek(now, { weekStartsOn: 1 });
+  });
   const [selectedSlot, setSelectedSlot] = useState<{ date: Date; time: string } | null>(null);
 
   // States for data
@@ -128,6 +139,27 @@ const AppointmentsPage = () => {
           const activeKineId = typeof activePlan.kineId === 'object' ? (activePlan.kineId as any)._id : activePlan.kineId;
           const kineForPlan = allKines.find(k => k._id === activeKineId);
 
+
+          // E. Check Existing Appointments (Restriction Logic)
+          try {
+            const rdvsRes = await axios.get(`${API_BASE_URL}/rdvs/patient/${currentPatientId}?onlyUpcoming=true`, config);
+            if (rdvsRes.data.success && rdvsRes.data.data.length > 0) {
+              // User already has an appointment, redirect to dashboard
+              toast({
+                variant: "destructive", // or default/info
+                title: "Action non autorisée",
+                description: "Vous avez déjà un rendez-vous à venir. Veuillez voir avec votre kiné pour en planifier d'autres."
+              });
+              navigate('/dashboard');
+              return; // Stop execution
+            }
+          } catch (e) {
+            console.warn("Could not check existing appointments", e);
+            // Fallthrough, don't block if check fails? Or block?
+            // Let's assume safely block if we can't be sure, OR allow if error (fail open/close?).
+            // Here: fail open (allow booking) if check fails, to avoid blocking on API errors unrelated to logic.
+          }
+
           if (kineForPlan) {
             setSelectedKine(kineForPlan);
             setKineLocked(true);
@@ -185,6 +217,10 @@ const AppointmentsPage = () => {
     };
 
     fetchAppointments();
+
+    // Auto-refresh every 30 seconds to keep slots up-to-date
+    const intervalId = setInterval(fetchAppointments, 30000);
+    return () => clearInterval(intervalId);
   }, [selectedKine, currentWeekStart]);
 
 
@@ -218,6 +254,8 @@ const AppointmentsPage = () => {
 
     // 3. Check availability against real appointments
     const isOccupied = appointments.some(rdv => {
+      if (rdv.statut === 'annulé') return false;
+
       const rdvDate = new Date(rdv.date);
       // Compare time (ignoring small ms diffs)
       return Math.abs(rdvDate.getTime() - slotDateTime.getTime()) < 60000;
@@ -259,7 +297,7 @@ const AppointmentsPage = () => {
         date: fullDate.toISOString(),
         duree: 30, // Default duration
         motif: "Consultation - Nouveau RDV",
-        statut: "à venir"
+        statut: "en attente"
       };
 
       await axios.post(`${API_BASE_URL}/rdvs`, payload, {

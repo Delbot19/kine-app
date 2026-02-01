@@ -3,6 +3,7 @@ import AuthService from './auth.service'
 import { loginSchema } from './auth.validation'
 import zodValidator from '../../middleware/zod-validator.middleware'
 import jsonResponse from '../../utils/jsonResponse'
+import authMiddleware from '../../middleware/auth.middleware'
 
 class AuthController {
     public path = '/auth'
@@ -15,6 +16,34 @@ class AuthController {
 
     private initializeRoutes(): void {
         this.router.post('/login', zodValidator(loginSchema), this.login)
+        this.router.get('/me', authMiddleware, this.getCurrentUser)
+    }
+
+    private readonly getCurrentUser = async (
+        req: Request,
+        res: Response,
+        next: NextFunction,
+    ): Promise<Response | void> => {
+        try {
+            const { user } = req as any
+            if (!user) {
+                return res.status(401).json(jsonResponse('Non authentifié', false))
+            }
+            // Authenticated user from middleware contains payload.
+            // We might want to fetch full details or just return payload if sufficient.
+            // Middleware attaches: { userId, role, ... }
+            // Let's assume we want full user details. relying on payload might be enough for ID/Role.
+            // However, frontend expects 'User' interface with name, email etc.
+            // So we should fetch from DB. "authService" might needed or just direct Model usage?
+            // Accessing AuthService seems cleaner.
+            const result = await this.authService.getCurrentUser(user.userId)
+            if (result.success) {
+                return res.status(200).json(jsonResponse('Utilisateur actuel', true, result.user))
+            }
+            return res.status(404).json(jsonResponse('Utilisateur non trouvé', false))
+        } catch (error) {
+            next(error)
+        }
     }
 
     private readonly login = async (

@@ -18,22 +18,25 @@ export default function LoginPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     const result = await login({
       email,
       motDePasse: password
     });
 
-    if (result.success) {
-      // Redirection vers le dashboard patient
-      navigate('/dashboard');
+    if (result.success && result.user) {
+      if (result.user.role === 'kinesitherapeute' || result.user.role === 'kine') {
+        navigate('/kine/dashboard');
+      } else {
+        navigate('/dashboard');
+      }
     }
   };
 
   return (
     <div className="min-h-screen flex">
       {/* Section gauche - Hero */}
-      <div 
+      <div
         className="hidden lg:flex lg:w-1/2 bg-gradient-hero relative overflow-hidden"
         style={{
           backgroundImage: `url(${heroImage})`,
@@ -54,7 +57,7 @@ export default function LoginPage() {
               Votre partenaire de confiance pour une rééducation moderne et personnalisée
             </p>
           </div>
-          
+
           <div className="space-y-6">
             <div className="flex items-center gap-4">
               <div className="p-2 bg-white/20 rounded-lg backdrop-blur-sm">
@@ -65,7 +68,7 @@ export default function LoginPage() {
                 <p className="text-sm opacity-75">Vos informations médicales protégées selon les normes RGPD</p>
               </div>
             </div>
-            
+
             <div className="flex items-center gap-4">
               <div className="p-2 bg-white/20 rounded-lg backdrop-blur-sm">
                 <Users className="h-6 w-6" />
@@ -75,7 +78,7 @@ export default function LoginPage() {
                 <p className="text-sm opacity-75">Kinésithérapeutes diplômés et spécialisés</p>
               </div>
             </div>
-            
+
             <div className="flex items-center gap-4">
               <div className="p-2 bg-white/20 rounded-lg backdrop-blur-sm">
                 <Clock className="h-6 w-6" />
@@ -121,7 +124,7 @@ export default function LoginPage() {
                     className="transition-all duration-200 focus:shadow-medical"
                   />
                 </div>
-                
+
                 <div className="space-y-2">
                   <Label htmlFor="password">Mot de passe</Label>
                   <PasswordInput
@@ -137,30 +140,30 @@ export default function LoginPage() {
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-2">
                     <Checkbox id="remember" />
-                    <Label 
-                      htmlFor="remember" 
+                    <Label
+                      htmlFor="remember"
                       className="text-sm cursor-pointer"
                     >
                       Se souvenir de moi
                     </Label>
                   </div>
-                  <a 
-                    href="#" 
+                  <a
+                    href="#"
                     className="text-sm text-primary hover:text-primary-glow transition-colors"
                   >
                     Mot de passe oublié ?
                   </a>
                 </div>
 
-                <Button 
-                  type="submit" 
+                <Button
+                  type="submit"
                   disabled={isLoading}
                   className="w-full bg-gradient-primary hover:shadow-medical transition-all duration-300"
                 >
                   {isLoading ? 'Connexion...' : 'Se connecter'}
                 </Button>
               </form>
-              
+
               <div className="mt-6 text-center text-sm text-muted-foreground">
                 Pas encore de compte patient ?{' '}
                 <Link to="/register" className="text-primary hover:text-primary-glow transition-colors">

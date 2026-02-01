@@ -4,9 +4,9 @@ import React, { useState, useEffect } from "react";
 import { ArrowLeft, Loader2 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
-import DailyProgress from "@/components/exercises/DailyProgress";
-import ExerciseCard from "@/components/exercises/ExerciseCard";
-import EncouragementBanner from "@/components/exercises/EncouragementBanner";
+import DailyProgress from "@/components/patient/exercises/DailyProgress";
+import ExerciseCard from "@/components/patient/exercises/ExerciseCard";
+import EncouragementBanner from "@/components/patient/exercises/EncouragementBanner";
 import { exerciseService, Exercise } from "@/api/exercise.service";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
@@ -46,7 +46,6 @@ const PatientExercises = () => {
 
         // 2. Get Exercises
         const data = await exerciseService.getTodayExercises();
-        console.log("DEBUG: Fetched exercises:", data);
         setExercises(data);
 
       } catch (error) {

@@ -26,4 +26,14 @@ export default class AuthService {
         })
         return { success: true, message: 'Connexion réussie', token, user: userSafe }
     }
+
+    async getCurrentUser(userId: string): Promise<any> {
+        const user = await User.findById(userId)
+        if (!user) {
+            return { success: false, message: 'Utilisateur non trouvé' }
+        }
+        const userObj = user.toObject()
+        const { motDePasse, ...userSafe } = userObj
+        return { success: true, user: userSafe }
+    }
 }

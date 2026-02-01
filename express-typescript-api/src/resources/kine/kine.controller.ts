@@ -15,6 +15,7 @@ class KineController {
     }
 
     private initializeRoutes(): void {
+        this.router.get('/me', authMiddleware, this.getMe)
         this.router.get('/by-user/:userId', authMiddleware, this.getKineByUserId)
         this.router.get('/', authMiddleware, this.getAllKines)
         this.router.get('/search', authMiddleware, this.searchKines)
@@ -108,6 +109,30 @@ class KineController {
             return res
                 .status(404)
                 .json(jsonResponse(result.message ?? 'Kiné non trouvé', false, result))
+        } catch (error) {
+            next(error)
+        }
+    }
+
+    private readonly getMe = async (
+        req: Request,
+        res: Response,
+        next: NextFunction,
+    ): Promise<Response | void> => {
+        try {
+            const { user } = req as any
+            if (!user) {
+                return res.status(401).json(jsonResponse('Utilisateur non authentifié', false))
+            }
+            const userId = user.userId || user._id
+            const result = await this.kineService.getMe(userId)
+
+            if (result.success) {
+                return res.status(200).json(jsonResponse('Mon profil kiné', true, result.kine))
+            }
+            return res
+                .status(404)
+                .json(jsonResponse(result.message ?? 'Profil kiné non trouvé', false, result))
         } catch (error) {
             next(error)
         }
