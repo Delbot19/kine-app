@@ -4,9 +4,10 @@ export const createExerciseSchema = z.object({
     title: z.string().min(1, 'Le titre est requis'),
     description: z.string().min(1, 'La description est requise'),
     duration: z.string().min(1, 'La durée est requise'),
+    category: z.string().min(1, 'La catégorie est requise'),
     tip: z.string().optional(),
     difficulty: z.enum(['Facile', 'Modéré', 'Difficile']),
-    icon: z.enum(['target', 'refresh', 'zap', 'circle']).optional(),
+    icon: z.enum(['target', 'refresh', 'zap', 'circle', 'dumbbell', 'activity']).optional(),
     isGlobal: z.boolean().optional(),
 })
 

@@ -10,6 +10,8 @@ export interface CreatePlanTraitementInput {
     exercises?: Array<{
         exerciseId: string
         instructions?: string
+        assignedAt?: Date
+        duree?: number
     }>
 }
 

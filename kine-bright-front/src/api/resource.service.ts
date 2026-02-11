@@ -1,20 +1,24 @@
 import axios from 'axios';
+import { API_BASE_URL } from '@/config';
 
-const API_BASE_URL = 'http://localhost:8000/api/ressources-educatives';
+const RESOURCE_API_URL = `${API_BASE_URL}/ressources-educatives`;
 
 export interface RessourceEducative {
   _id: string;
   titre: string;
   type: 'article' | 'video';
+  slug: string;
+  misEnAvant: boolean;
   description?: string;
-  contenu?: string;
+  contenu: string;
   url?: string;
+  imageUrl?: string;
   auteurId: { _id: string; nom: string; prenom: string } | string;
   datePublication: string;
   visibilite: 'public' | 'privé';
   tags?: string[];
-  imageUrl?: string;
   createdAt: string;
+  updatedAt: string;
 }
 
 const getAuthHeader = () => {
@@ -24,17 +28,17 @@ const getAuthHeader = () => {
 
 export const resourceService = {
   getAll: async () => {
-    const response = await axios.get(API_BASE_URL, getAuthHeader());
+    const response = await axios.get(RESOURCE_API_URL, getAuthHeader());
     return response.data.data;
   },
 
   getById: async (id: string) => {
-    const response = await axios.get(`${API_BASE_URL}/${id}`, getAuthHeader());
+    const response = await axios.get(`${RESOURCE_API_URL}/${id}`, getAuthHeader());
     return response.data.data;
   },
 
   search: async (term: string) => {
-    const response = await axios.get(`${API_BASE_URL}/search/${term}`, getAuthHeader());
+    const response = await axios.get(`${RESOURCE_API_URL}/search/${term}`, getAuthHeader());
     return response.data.data;
   }
 };

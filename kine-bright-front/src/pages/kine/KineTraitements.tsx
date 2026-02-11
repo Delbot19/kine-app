@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import { useSearchParams, useNavigate } from 'react-router-dom';
+import { API_BASE_URL } from '@/config';
 import axios from 'axios';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -15,6 +17,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
@@ -33,11 +37,15 @@ import {
   Circle,
   Edit,
   Users,
-  Pencil
+  Pencil,
+  Trash2,
+  Activity,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
-import { format, isPast, differenceInWeeks } from 'date-fns';
+import { format, isPast, differenceInWeeks, isSameDay, addDays, subDays, startOfDay } from 'date-fns';
 import { fr } from 'date-fns/locale';
 
 interface Objective {
@@ -57,10 +65,40 @@ interface Session {
   rawDate: Date;
 }
 
+interface Exercise {
+  _id?: string; // ID within the plan array (optional depending on mongoose version but usually present as subdoc id)
+  exerciseId: {
+    _id: string;
+    title: string;
+    description: string;
+    difficulty: string;
+    category: string;
+    image?: string;
+  };
+  instructions?: string;
+  duree?: number;
+  assignedAt?: string;
+}
+
 interface Patient {
   id: string;
   name: string;
   pathology: string;
+}
+
+interface ExerciseLog {
+  _id: string;
+  date: string;
+  exerciseId: {
+    title: string;
+    description: string;
+    icon: string;
+  };
+  completed: boolean;
+  douleur?: number;
+  difficulte?: string;
+  ressenti?: string;
+  modifications?: string;
 }
 
 const iconMap = {
@@ -71,20 +109,26 @@ const iconMap = {
 
 const KineTraitements = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [loading, setLoading] = useState(true);
   const [patients, setPatients] = useState<Patient[]>([]);
-  const [selectedPatientId, setSelectedPatientId] = useState<string>('');
+  const [selectedPatientId, setSelectedPatientId] = useState<string>(searchParams.get('patientId') || '');
 
   // Data for selected patient
   const [activePlan, setActivePlan] = useState<any>(null);
   const [objectives, setObjectives] = useState<Objective[]>([]);
   const [sessions, setSessions] = useState<Session[]>([]);
+  const [exerciseLogs, setExerciseLogs] = useState<ExerciseLog[]>([]);
+  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
 
   // Dialog states
   const [isObjectiveDialogOpen, setIsObjectiveDialogOpen] = useState(false);
-  const [isObjectiveEditDialogOpen, setIsObjectiveEditDialogOpen] = useState(false);
+  const [isObjectiveProgressDialogOpen, setIsObjectiveProgressDialogOpen] = useState(false);
+  const [isObjectiveContentDialogOpen, setIsObjectiveContentDialogOpen] = useState(false);
   const [isSessionEditDialogOpen, setIsSessionEditDialogOpen] = useState(false);
 
+  // Forms
   // Forms
   const [newObjective, setNewObjective] = useState<{ title: string; description: string; icon: 'heart' | 'trending' | 'dumbbell' }>({
     title: '', description: '', icon: 'heart'
@@ -93,6 +137,9 @@ const KineTraitements = () => {
   // Edit States
   const [editingObjectiveIndex, setEditingObjectiveIndex] = useState<number | null>(null);
   const [editingObjectiveProgress, setEditingObjectiveProgress] = useState<number>(0);
+  const [editingObjectiveContent, setEditingObjectiveContent] = useState<{ title: string; description: string; icon: 'heart' | 'trending' | 'dumbbell' }>({
+    title: '', description: '', icon: 'heart'
+  });
 
   const [editingSessionId, setEditingSessionId] = useState<string | null>(null);
   const [editingSessionMotif, setEditingSessionMotif] = useState({ title: '', description: '' });
@@ -100,8 +147,6 @@ const KineTraitements = () => {
   const [isDurationEditDialogOpen, setIsDurationEditDialogOpen] = useState(false);
   const [editingDuration, setEditingDuration] = useState<number>(0);
   const [isTerminateDialogOpen, setIsTerminateDialogOpen] = useState(false);
-
-  const API_BASE_URL = 'http://localhost:8000/api';
 
   // 1. Fetch Patients on Load
   useEffect(() => {
@@ -122,9 +167,10 @@ const KineTraitements = () => {
             pathology: p.pathologie || 'Pathologie non spécifiée'
           }));
           setPatients(mappedPatients);
-          if (mappedPatients.length > 0) {
+          setPatients(mappedPatients);
+          if (mappedPatients.length > 0 && !selectedPatientId) {
             setSelectedPatientId(mappedPatients[0].id);
-          } else {
+          } else if (mappedPatients.length === 0) {
             setLoading(false);
           }
         }
@@ -188,6 +234,10 @@ const KineTraitements = () => {
           });
         setSessions(mappedSessions);
 
+        // Fetch Exercise Logs
+        const logsRes = await axios.get(`${API_BASE_URL}/exercises/patient/${selectedPatientId}/logs`, config);
+        setExerciseLogs(logsRes.data.data);
+
       } catch (error) {
         console.error("Error fetching patient details", error);
       } finally {
@@ -228,13 +278,13 @@ const KineTraitements = () => {
     }
   };
 
-  const openObjectiveEdit = (index: number, obj: Objective) => {
+  const openObjectiveProgressEdit = (index: number, obj: Objective) => {
     setEditingObjectiveIndex(index);
     setEditingObjectiveProgress(obj.progress);
-    setIsObjectiveEditDialogOpen(true);
+    setIsObjectiveProgressDialogOpen(true);
   };
 
-  const handleUpdateObjective = async () => {
+  const handleUpdateObjectiveProgress = async () => {
     if (!activePlan || editingObjectiveIndex === null) return;
     try {
       const token = localStorage.getItem('authToken');
@@ -247,7 +297,7 @@ const KineTraitements = () => {
       if (obj.progress === 100) {
         obj.status = 'Terminé';
       } else {
-        obj.status = 'En cours'; // Or logic to revert if < 100? Assuming strictly progress based for now.
+        obj.status = 'En cours';
       }
 
       await axios.put(`${API_BASE_URL}/plans-traitement/${activePlan._id}`, {
@@ -255,11 +305,69 @@ const KineTraitements = () => {
       }, config);
 
       setObjectives(updatedObjectives);
-      setIsObjectiveEditDialogOpen(false);
+      setIsObjectiveProgressDialogOpen(false);
       setEditingObjectiveIndex(null);
 
     } catch (error) {
-      console.error("Error updating objective", error);
+      console.error("Error updating objective progress", error);
+    }
+  };
+
+  const openObjectiveContentEdit = (index: number, obj: Objective) => {
+    setEditingObjectiveIndex(index);
+    setEditingObjectiveContent({
+      title: obj.title,
+      description: obj.description,
+      icon: obj.icon
+    });
+    setIsObjectiveContentDialogOpen(true);
+  };
+
+  const handleUpdateObjectiveContent = async () => {
+    if (!activePlan || editingObjectiveIndex === null) return;
+    try {
+      const token = localStorage.getItem('authToken');
+      const config = { headers: { Authorization: `Bearer ${token}` } };
+
+      const updatedObjectives = [...objectives];
+      const obj = updatedObjectives[editingObjectiveIndex];
+
+      obj.title = editingObjectiveContent.title;
+      obj.description = editingObjectiveContent.description;
+      obj.icon = editingObjectiveContent.icon;
+
+      await axios.put(`${API_BASE_URL}/plans-traitement/${activePlan._id}`, {
+        objectifs: updatedObjectives
+      }, config);
+
+      setObjectives(updatedObjectives);
+      setIsObjectiveContentDialogOpen(false);
+      setEditingObjectiveIndex(null);
+
+    } catch (error) {
+      console.error("Error updating objective content", error);
+    }
+  };
+
+  const handleDeleteObjective = async (index: number) => {
+    if (!activePlan) return;
+    if (!window.confirm("Êtes-vous sûr de vouloir supprimer cet objectif ?")) return;
+
+    try {
+      const token = localStorage.getItem('authToken');
+      const config = { headers: { Authorization: `Bearer ${token}` } };
+
+      const updatedObjectives = [...objectives];
+      updatedObjectives.splice(index, 1);
+
+      await axios.put(`${API_BASE_URL}/plans-traitement/${activePlan._id}`, {
+        objectifs: updatedObjectives
+      }, config);
+
+      setObjectives(updatedObjectives);
+
+    } catch (error) {
+      console.error("Error deleting objective", error);
     }
   };
 
@@ -321,6 +429,37 @@ const KineTraitements = () => {
 
     } catch (error) {
       console.error("Error updating duration", error);
+    }
+  };
+
+  const handleDeleteExercise = async (index: number) => {
+    if (!activePlan) return;
+    if (!window.confirm("Êtes-vous sûr de vouloir supprimer cet exercice du plan ?")) return;
+
+    try {
+      const token = localStorage.getItem('authToken');
+      const config = { headers: { Authorization: `Bearer ${token}` } };
+
+      const currentExercises = activePlan.exercises || [];
+      const updatedExercises = currentExercises.filter((_: any, i: number) => i !== index);
+
+      // Map back to API format (un-populate exerciseId)
+      const apiExercises = updatedExercises.map((e: any) => ({
+        exerciseId: e.exerciseId._id || e.exerciseId, // Handle populated or not
+        instructions: e.instructions,
+        duree: e.duree,
+        assignedAt: e.assignedAt
+      }));
+
+      await axios.put(`${API_BASE_URL}/plans-traitement/${activePlan._id}`, {
+        exercises: apiExercises
+      }, config);
+
+      setActivePlan({ ...activePlan, exercises: updatedExercises });
+
+    } catch (error) {
+      console.error("Error deleting exercise", error);
+      alert("Erreur lors de la suppression de l'exercice.");
     }
   };
 
@@ -446,6 +585,8 @@ const KineTraitements = () => {
             </AlertDialogContent>
           </AlertDialog>
 
+
+
           {/* Objectives Section */}
           <div className="space-y-4">
             <div className="flex items-center justify-between">
@@ -464,14 +605,24 @@ const KineTraitements = () => {
                 const Icon = iconMap[objective.icon as keyof typeof iconMap] || Heart;
                 return (
                   <Card key={i} className="relative group">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="absolute top-3 right-3 h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
-                      onClick={() => openObjectiveEdit(i, objective)}
-                    >
-                      <Edit className="h-4 w-4 text-muted-foreground" />
-                    </Button>
+                    <div className="absolute top-3 right-3 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 hover:bg-muted"
+                        onClick={() => openObjectiveContentEdit(i, objective)}
+                      >
+                        <Pencil className="h-4 w-4 text-muted-foreground" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 hover:bg-red-50 hover:text-red-600"
+                        onClick={() => handleDeleteObjective(i)}
+                      >
+                        <Trash2 className="h-4 w-4 text-muted-foreground" />
+                      </Button>
+                    </div>
                     <CardContent className="p-5">
                       <div className="flex items-start gap-3 mb-3">
                         <div className="p-2 bg-primary/10 rounded-lg">
@@ -488,7 +639,15 @@ const KineTraitements = () => {
                           <span className="text-muted-foreground">Progression</span>
                           <span className="font-semibold text-primary">{objective.progress}%</span>
                         </div>
-                        <Progress value={objective.progress} className="h-2" />
+                        <div
+                          className="relative pt-1 cursor-pointer group/progress"
+                          onClick={() => openObjectiveProgressEdit(i, objective)}
+                        >
+                          <Progress value={objective.progress} className="h-2 group-hover/progress:h-3 transition-all" />
+                          <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover/progress:opacity-100 text-[10px] text-white font-bold pointer-events-none">
+                            Modifier
+                          </div>
+                        </div>
                       </div>
                     </CardContent>
                   </Card>
@@ -585,6 +744,253 @@ const KineTraitements = () => {
             </Card>
           </div>
 
+          {/* Prescribed Exercises Section (Moved here) */}
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Dumbbell className="h-5 w-5 text-primary" />
+                <h2 className="text-lg font-semibold">Exercices Prescrits</h2>
+              </div>
+              {(!activePlan || !activePlan.exercises || activePlan.exercises.length === 0) && (
+                <Button onClick={() => navigate(`/kine/prescriptions?patientId=${selectedPatientId}`)} className="gap-2">
+                  <Plus className="h-4 w-4" />
+                  Ajouter des exercices
+                </Button>
+              )}
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {activePlan && activePlan.exercises && activePlan.exercises.length > 0 ? (
+                activePlan.exercises.map((ex: any, i: number) => (
+                  <Card key={i} className="relative group overflow-hidden">
+                    <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity z-10">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7 bg-white/80 hover:bg-red-50 hover:text-red-600 shadow-sm"
+                        onClick={() => handleDeleteExercise(i)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                    <CardContent className="p-4 flex gap-4">
+                      <div className="h-16 w-16 bg-slate-100 rounded-md flex items-center justify-center shrink-0 overflow-hidden">
+                        {ex.exerciseId && ex.exerciseId.image ? (
+                          <img src={ex.exerciseId.image} alt={ex.exerciseId.title} className="h-full w-full object-cover" />
+                        ) : (
+                          <Dumbbell className="h-8 w-8 text-slate-300" />
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h4 className="font-medium text-sm truncate" title={ex.exerciseId?.title}>
+                          {ex.exerciseId?.title || "Exercice Inconnu"}
+                        </h4>
+                        <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
+                          {ex.instructions || "Aucune consigne spécifique."}
+                        </p>
+                        <div className="flex items-center gap-2 mt-2">
+                          <Badge variant="outline" className="text-[10px] h-5">
+                            {ex.duree || 7} jours
+                          </Badge>
+                          <Badge variant="secondary" className="text-[10px] h-5">
+                            {ex.exerciseId?.category || "Général"}
+                          </Badge>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))
+              ) : (
+                <div className="col-span-full text-center py-8 border-2 border-dashed rounded-lg bg-slate-50/50">
+                  <p className="text-muted-foreground mb-4">Aucun exercice prescrit dans ce plan.</p>
+                  {activePlan ? (
+                    <Button variant="outline" onClick={() => navigate(`/kine/prescriptions?patientId=${selectedPatientId}`)}>
+                      Ajouter des exercices
+                    </Button>
+                  ) : (
+                    <p className="text-sm text-muted-foreground">Créez un plan de traitement pour commencer.</p>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Exercise Follow-up Section */}
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Activity className="h-5 w-5 text-primary" />
+                <h2 className="text-lg font-semibold">Suivi des Exercices</h2>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <Button variant="outline" size="icon" onClick={() => setSelectedDate(subDays(selectedDate, 1))}>
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" className={cn("w-[240px] justify-start text-left font-normal", !selectedDate && "text-muted-foreground")}>
+                      <Calendar className="mr-2 h-4 w-4" />
+                      {selectedDate ? format(selectedDate, "PPP", { locale: fr }) : <span>Choisir une date</span>}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="end">
+                    <CalendarComponent
+                      mode="single"
+                      selected={selectedDate}
+                      onSelect={(date) => date && setSelectedDate(date)}
+                      initialFocus
+                      locale={fr}
+                    />
+                  </PopoverContent>
+                </Popover>
+
+                <Button variant="outline" size="icon" onClick={() => setSelectedDate(addDays(selectedDate, 1))}>
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+            <Card>
+              <CardContent className="p-0">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm text-left">
+                    <thead className="bg-muted/50 text-muted-foreground">
+                      <tr>
+                        <th className="px-4 py-3 font-medium">Exercice</th>
+                        <th className="px-4 py-3 font-medium">Statut</th>
+                        <th className="px-4 py-3 font-medium">Douleur (1-5)</th>
+                        <th className="px-4 py-3 font-medium">Difficulté</th>
+                        <th className="px-4 py-3 font-medium">Ressenti / Commentaires</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y text-muted-foreground">
+                      {/* Logic to show exercises scheduled for this day */}
+                      {(() => {
+                        // 1. Get logs for the selected date
+                        const dayLogs = exerciseLogs.filter(log => isSameDay(new Date(log.date), selectedDate));
+
+                        // 2. Get exercises from plan that should be active on this date
+                        const scheduledExercises = activePlan?.exercises?.filter((ex: any) => {
+                          const assignmentDate = ex.assignedAt ? new Date(ex.assignedAt) : new Date(activePlan.createdAt);
+                          const expiryDate = addDays(startOfDay(assignmentDate), ex.duree || activePlan.duree || 7);
+                          const checkDate = startOfDay(selectedDate);
+                          return checkDate >= startOfDay(assignmentDate) && checkDate <= expiryDate;
+                        }) || [];
+
+                        // 3. Merge: Display all scheduled exercises. 
+                        // If log exists, use log data. If not, show "Non fait".
+                        // Also include logs that might exist but aren't in current plan (history)? No, stick to plan for clarity or union?
+                        // Let's use Union of Scheduled + Logs (in case of extra logs)
+
+                        // Map scheduled to a display format
+                        const displayItems = scheduledExercises.map((ex: any) => {
+                          const log = dayLogs.find(l => l.exerciseId.title === ex.exerciseId.title); // Matching by title/ID best effort if IDs populated differently
+                          // Better to match by ID but ex.exerciseId is populated object in plan, log.exerciseId might be populated too or ref.
+                          // Let's assume title match or ID match if available.
+                          const logMatch = dayLogs.find(l => {
+                            // log.exerciseId is populated object from our service
+                            // ex.exerciseId is populated object from plan
+                            return (l.exerciseId as any)._id === (ex.exerciseId as any)._id || (l.exerciseId as any).title === (ex.exerciseId as any).title;
+                          });
+
+                          return {
+                            id: ex.exerciseId._id,
+                            title: ex.exerciseId.title || "Exercice",
+                            completed: !!logMatch?.completed,
+                            douleur: logMatch?.douleur,
+                            difficulte: logMatch?.difficulte,
+                            ressenti: logMatch?.ressenti,
+                            modifications: logMatch?.modifications,
+                            isScheduled: true
+                          };
+                        });
+
+                        // Add logs that are NOT in scheduled (e.g. old plan exercises or extra ones)
+                        dayLogs.forEach(log => {
+                          const updatedTitle = (log.exerciseId as any).title;
+                          if (!displayItems.find((i: any) => i.title === updatedTitle)) {
+                            displayItems.push({
+                              id: log._id,
+                              title: updatedTitle,
+                              completed: log.completed,
+                              douleur: log.douleur,
+                              difficulte: log.difficulte,
+                              ressenti: log.ressenti,
+                              modifications: log.modifications,
+                              isScheduled: false // Extra log
+                            });
+                          }
+                        });
+
+
+                        return displayItems.length > 0 ? (
+                          displayItems.map((item: any, idx: number) => (
+                            <tr key={item.id || idx} className="hover:bg-muted/50 transition-colors">
+                              <td className="px-4 py-3 font-medium text-foreground">
+                                {item.title}
+                                {!item.isScheduled && <Badge variant="outline" className="ml-2 text-[10px]">Hors plan</Badge>}
+                              </td>
+                              <td className="px-4 py-3">
+                                <Badge variant={item.completed ? 'default' : 'secondary'}>
+                                  {item.completed ? 'Fait' : 'Non fait'}
+                                </Badge>
+                              </td>
+                              <td className="px-4 py-3">
+                                {item.douleur !== undefined ? (
+                                  <div className="flex items-center gap-2">
+                                    <span className={cn(
+                                      "w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold",
+                                      item.douleur === 1 ? "bg-green-100 text-green-700" :
+                                        item.douleur === 2 ? "bg-yellow-100 text-yellow-700" :
+                                          item.douleur === 3 ? "bg-orange-100 text-orange-700" :
+                                            item.douleur === 4 ? "bg-red-100 text-red-700" : "bg-red-900 text-white"
+                                    )}>
+                                      {item.douleur}
+                                    </span>
+                                  </div>
+                                ) : '-'}
+                              </td>
+                              <td className="px-4 py-3">
+                                {item.difficulte ? (
+                                  <Badge variant="outline" className={cn(
+                                    item.difficulte === 'Facile' ? 'border-green-200 text-green-700 bg-green-50' :
+                                      item.difficulte === 'Modéré' ? 'border-blue-200 text-blue-700 bg-blue-50' :
+                                        item.difficulte === 'Difficile' ? 'border-orange-200 text-orange-700 bg-orange-50' :
+                                          'border-red-200 text-red-700 bg-red-50'
+                                  )}>
+                                    {item.difficulte}
+                                  </Badge>
+                                ) : '-'}
+                              </td>
+                              <td className="px-4 py-3 text-sm max-w-[300px]">
+                                <div className="flex flex-col gap-1">
+                                  {item.ressenti && (
+                                    <span className="italic">"{item.ressenti}"</span>
+                                  )}
+                                  {item.modifications && (
+                                    <span className="text-xs text-amber-600">Adaptation: {item.modifications}</span>
+                                  )}
+                                  {!item.ressenti && !item.modifications && '-'}
+                                </div>
+                              </td>
+                            </tr>
+                          ))
+                        ) : (
+                          <tr>
+                            <td colSpan={5} className="px-4 py-8 text-center text-muted-foreground">
+                              Aucun exercice prévu ou réalisé pour cette date.
+                            </td>
+                          </tr>
+                        );
+                      })()}
+                    </tbody>
+                  </table>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
           {/* Progress Summary */}
           <Card>
             <CardContent className="p-6">
@@ -666,8 +1072,8 @@ const KineTraitements = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Edit Objective Dialog */}
-      <Dialog open={isObjectiveEditDialogOpen} onOpenChange={setIsObjectiveEditDialogOpen}>
+      {/* Edit Objective Progress Dialog */}
+      <Dialog open={isObjectiveProgressDialogOpen} onOpenChange={setIsObjectiveProgressDialogOpen}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Mettre à jour la progression</DialogTitle>
@@ -688,8 +1094,50 @@ const KineTraitements = () => {
             </p>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsObjectiveEditDialogOpen(false)}>Annuler</Button>
-            <Button onClick={handleUpdateObjective}>Enregistrer</Button>
+            <Button variant="outline" onClick={() => setIsObjectiveProgressDialogOpen(false)}>Annuler</Button>
+            <Button onClick={handleUpdateObjectiveProgress}>Enregistrer</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Objective Content Dialog */}
+      <Dialog open={isObjectiveContentDialogOpen} onOpenChange={setIsObjectiveContentDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Modifier l'objectif</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label>Titre</Label>
+              <Input
+                value={editingObjectiveContent.title}
+                onChange={(e) => setEditingObjectiveContent({ ...editingObjectiveContent, title: e.target.value })}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Description</Label>
+              <Textarea
+                value={editingObjectiveContent.description}
+                onChange={(e) => setEditingObjectiveContent({ ...editingObjectiveContent, description: e.target.value })}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Icône</Label>
+              <Select value={editingObjectiveContent.icon} onValueChange={(value: 'heart' | 'trending' | 'dumbbell') => setEditingObjectiveContent({ ...editingObjectiveContent, icon: value })}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="heart">Douleur (Cœur)</SelectItem>
+                  <SelectItem value="trending">Mobilité (Graphique)</SelectItem>
+                  <SelectItem value="dumbbell">Renforcement (Haltère)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsObjectiveContentDialogOpen(false)}>Annuler</Button>
+            <Button onClick={handleUpdateObjectiveContent}>Mettre à jour</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

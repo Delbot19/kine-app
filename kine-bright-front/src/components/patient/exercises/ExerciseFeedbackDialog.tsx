@@ -38,7 +38,7 @@ const ExerciseFeedbackDialog = ({
   exerciseTitle,
 }: ExerciseFeedbackDialogProps) => {
   const [step, setStep] = useState(1);
-  const [douleur, setDouleur] = useState([0]); // Slider uses array
+  const [douleur, setDouleur] = useState([1]); // Slider uses array
   const [difficulte, setDifficulte] = useState<string>('Modéré');
   const [ressenti, setRessenti] = useState('');
   const [modifications, setModifications] = useState('');
@@ -88,12 +88,13 @@ const ExerciseFeedbackDialog = ({
               {/* Pain Level */}
               <div className="space-y-3">
                 <div className="flex justify-between items-center">
-                  <Label className="text-base">Niveau de douleur (0-10)</Label>
+                  <Label className="text-base">Niveau de douleur (1-5)</Label>
                   <span className={cn(
                     "font-bold text-lg w-8 h-8 rounded-full flex items-center justify-center",
-                    douleur[0] === 0 ? "bg-green-100 text-green-700" :
-                      douleur[0] < 4 ? "bg-yellow-100 text-yellow-700" :
-                        douleur[0] < 7 ? "bg-orange-100 text-orange-700" : "bg-red-100 text-red-700"
+                    douleur[0] === 1 ? "bg-green-100 text-green-700" :
+                      douleur[0] === 2 ? "bg-yellow-100 text-yellow-700" :
+                        douleur[0] === 3 ? "bg-orange-100 text-orange-700" :
+                          douleur[0] === 4 ? "bg-red-100 text-red-700" : "bg-red-900 text-white"
                   )}>
                     {douleur[0]}
                   </span>
@@ -101,13 +102,14 @@ const ExerciseFeedbackDialog = ({
                 <Slider
                   value={douleur}
                   onValueChange={setDouleur}
-                  max={10}
+                  min={1}
+                  max={5}
                   step={1}
                   className="py-2"
                 />
                 <div className="flex justify-between text-xs text-muted-foreground px-1">
-                  <span>Aucune</span>
-                  <span>Extrême</span>
+                  <span>Très faible</span>
+                  <span>Intense</span>
                 </div>
               </div>
 

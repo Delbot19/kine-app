@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { format, addDays, startOfWeek, addWeeks, subWeeks, isSameDay, isBefore } from 'date-fns';
 import { fr } from 'date-fns/locale';
 
-const API_BASE_URL = "http://localhost:8000/api";
+import { API_BASE_URL } from '@/config';
 
 // Types pour notre système de réservation
 type SlotStatus = 'free' | 'occupied' | 'selected';

@@ -29,7 +29,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { PasswordInput } from "@/components/ui/password-input";
 
-const API_BASE_URL = 'http://localhost:8000/api';
+import { API_BASE_URL } from '@/config';
 
 const ProfilePage = () => {
   const { user } = useAuth();

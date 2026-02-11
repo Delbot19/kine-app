@@ -5,6 +5,8 @@ export interface IKine extends Document {
     specialite: string
     numeroRPPS: string
     presentation?: string
+    telephone?: string
+    adresse?: string
     createdAt: Date
     updatedAt: Date
 }
@@ -26,6 +28,12 @@ const kineSchema = new Schema<IKine>(
             required: true,
         },
         presentation: {
+            type: String,
+        },
+        telephone: {
+            type: String,
+        },
+        adresse: {
             type: String,
         },
     },

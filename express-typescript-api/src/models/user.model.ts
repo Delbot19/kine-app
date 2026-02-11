@@ -15,6 +15,8 @@ export interface IUser extends Document {
     role: RoleEnum
     actif: boolean
     dateInscription: Date
+    resetPasswordToken?: string
+    resetPasswordExpires?: Date
 }
 
 const userSchema = new Schema<IUser>({
@@ -25,6 +27,8 @@ const userSchema = new Schema<IUser>({
     role: { type: String, enum: Object.values(RoleEnum), default: RoleEnum.PATIENT },
     actif: { type: Boolean, default: true },
     dateInscription: { type: Date, default: Date.now },
+    resetPasswordToken: { type: String },
+    resetPasswordExpires: { type: Date },
 })
 
 export default model<IUser>('User', userSchema)

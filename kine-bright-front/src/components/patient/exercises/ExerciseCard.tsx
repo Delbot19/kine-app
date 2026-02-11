@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { CheckCircle2, Clock, Target, RefreshCw, Zap, LucideIcon } from "lucide-react";
+import { CheckCircle2, Clock, Target, RefreshCw, Zap, LucideIcon, Dumbbell, Activity } from "lucide-react";
 import ExerciseFeedbackDialog, { FeedbackData } from "./ExerciseFeedbackDialog";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -46,6 +46,9 @@ const ExerciseCard = ({ exercise, onToggleComplete, animationDelay = 0 }: Exerci
       case 'target': return Target;
       case 'refresh': return RefreshCw;
       case 'zap': return Zap;
+      case 'circle': return Target; // Fallback to Target/Circle
+      case 'dumbbell': return Dumbbell; // Using Lucide Dumbbell (make sure it's imported)
+      case 'activity': return Activity; // Using Lucide Activity
       default: return Target;
     }
   };

@@ -22,6 +22,7 @@ class AdminController {
             this.registerKine,
         )
         this.router.get('/users', authMiddleware, this.getAllUsers)
+        this.router.get('/dashboard-stats', authMiddleware, this.getDashboardStats)
     }
 
     private readonly registerKine = async (
@@ -55,6 +56,27 @@ class AdminController {
                 return res
                     .status(200)
                     .json(jsonResponse('Liste des utilisateurs', true, result.users))
+            }
+            return res
+                .status(403)
+                .json(jsonResponse(result.message || 'Accès refusé', false, result))
+        } catch (error) {
+            next(error)
+        }
+    }
+
+    private readonly getDashboardStats = async (
+        req: Request,
+        res: Response,
+        next: NextFunction,
+    ): Promise<Response | void> => {
+        try {
+            const role = (req as any).user?.role
+            const result = await this.adminService.getDashboardStats(role)
+            if (result.success) {
+                return res
+                    .status(200)
+                    .json(jsonResponse('Statistiques Dashboard', true, result.stats))
             }
             return res
                 .status(403)

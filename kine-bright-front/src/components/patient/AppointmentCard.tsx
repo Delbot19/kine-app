@@ -14,6 +14,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import { API_BASE_URL } from '@/config';
 import {
   Dialog,
   DialogContent,
@@ -75,7 +76,7 @@ const AppointmentCard = ({ appointment, variant = 'default', onCancel, onModify 
           // Since this file doesn't have axios import yet, we must add it.
           // OR better: we implement logic based on 'getRendezVousByKineAndDate' endpoint
 
-          const res = await fetch(`http://localhost:8000/api/rdvs?kineId=${appointment.kineId}&date=${modifyDate}`, {
+          const res = await fetch(`${API_BASE_URL}/rdvs?kineId=${appointment.kineId}&date=${modifyDate}`, {
             headers: { Authorization: `Bearer ${token}` }
           });
           const data = await res.json();

@@ -10,6 +10,7 @@ import { useState } from 'react';
 import axios from 'axios';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
+import { API_BASE_URL } from '@/config';
 
 const ContactPage = () => {
   const { toast } = useToast();
@@ -41,7 +42,6 @@ const ContactPage = () => {
         message: formData.message
       };
 
-      const API_BASE_URL = 'http://localhost:8000/api'; // Or use env var
       const response = await axios.post(`${API_BASE_URL}/contact`, payload);
 
       if (response.data.success) {

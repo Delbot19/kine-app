@@ -3,6 +3,8 @@ import { Schema, model, type Document } from 'mongoose'
 export interface IRessourceEducative extends Document {
     titre: string
     type: 'article' | 'video'
+    slug: string
+    misEnAvant: boolean
     description?: string
     contenu: string
     url?: string
@@ -19,6 +21,8 @@ const ressourceEducativeSchema = new Schema<IRessourceEducative>(
     {
         titre: { type: String, required: true },
         type: { type: String, enum: ['article', 'video'], required: true },
+        slug: { type: String, unique: true, required: true },
+        misEnAvant: { type: Boolean, default: false },
         description: { type: String },
         contenu: { type: String },
         url: { type: String },

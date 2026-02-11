@@ -12,7 +12,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import axios from "axios";
 
-const API_BASE_URL = 'http://localhost:8000/api';
+import { API_BASE_URL } from '@/config';
 
 const PatientExercises = () => {
   const { user } = useAuth();

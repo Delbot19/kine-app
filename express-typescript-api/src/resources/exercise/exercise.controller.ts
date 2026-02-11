@@ -23,6 +23,17 @@ class ExerciseController {
             zodValidator(createExerciseSchema),
             this.createExercise,
         )
+        this.router.put(
+            '/:id',
+            authMiddleware, // TODO: Add role check
+            // zodValidator(createExerciseSchema), // Optional: Strict validation on update? Using partial for now
+            this.updateExercise,
+        )
+        this.router.delete(
+            '/:id',
+            authMiddleware, // TODO: Add role check
+            this.deleteExercise,
+        )
 
         // Patient Routes
         this.router.get('/patient/today', authMiddleware, this.getPatientExercisesToday)
@@ -31,6 +42,14 @@ class ExerciseController {
             authMiddleware,
             zodValidator(toggleExerciseSchema),
             this.toggleExercise,
+        )
+
+        // Kiné Routes
+        this.router.get(
+            '/patient/:patientId/logs',
+            authMiddleware,
+            // TODO: Verify Kiné access to patient?
+            this.getPatientLogs,
         )
     }
 
@@ -55,6 +74,42 @@ class ExerciseController {
         try {
             const exercise = await this.exerciseService.createExercise(req.body)
             res.status(201).json(jsonResponse('Exercice créé avec succès', true, exercise))
+        } catch (error) {
+            next(error)
+        }
+    }
+
+    private readonly updateExercise = async (
+        req: Request,
+        res: Response,
+        next: NextFunction,
+    ): Promise<void> => {
+        try {
+            const { id } = req.params
+            const exercise = await this.exerciseService.updateExercise(id, req.body)
+            if (!exercise) {
+                res.status(404).json(jsonResponse('Exercice non trouvé', false))
+                return
+            }
+            res.status(200).json(jsonResponse('Exercice mis à jour', true, exercise))
+        } catch (error) {
+            next(error)
+        }
+    }
+
+    private readonly deleteExercise = async (
+        req: Request,
+        res: Response,
+        next: NextFunction,
+    ): Promise<void> => {
+        try {
+            const { id } = req.params
+            const exercise = await this.exerciseService.deleteExercise(id)
+            if (!exercise) {
+                res.status(404).json(jsonResponse('Exercice non trouvé', false))
+                return
+            }
+            res.status(200).json(jsonResponse('Exercice supprimé', true, null))
         } catch (error) {
             next(error)
         }
@@ -120,6 +175,20 @@ class ExerciseController {
                 { douleur, difficulte, ressenti, modifications },
             )
             res.status(200).json(jsonResponse('Statut mis à jour', true, log))
+        } catch (error) {
+            next(error)
+        }
+    }
+
+    private readonly getPatientLogs = async (
+        req: Request,
+        res: Response,
+        next: NextFunction,
+    ): Promise<Response | void> => {
+        try {
+            const { patientId } = req.params
+            const logs = await this.exerciseService.getExerciseLogsByPatient(patientId)
+            return res.status(200).json(jsonResponse('Suivi des exercices récupéré', true, logs))
         } catch (error) {
             next(error)
         }

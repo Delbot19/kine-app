@@ -5,6 +5,7 @@ export interface IExercise extends Document {
     description: string
     duration: string
     tip: string
+    category: string
     difficulty: 'Facile' | 'Modéré' | 'Difficile'
     icon: 'target' | 'refresh' | 'zap' | 'circle'
     isGlobal: boolean
@@ -18,6 +19,11 @@ const exerciseSchema = new Schema<IExercise>(
         description: { type: String, required: true },
         duration: { type: String, required: true },
         tip: { type: String },
+        category: {
+            type: String,
+            required: true,
+            default: 'Mobilité', // Default for migration
+        },
         difficulty: {
             type: String,
             enum: ['Facile', 'Modéré', 'Difficile'],
@@ -25,7 +31,7 @@ const exerciseSchema = new Schema<IExercise>(
         },
         icon: {
             type: String,
-            enum: ['target', 'refresh', 'zap', 'circle'],
+            enum: ['target', 'refresh', 'zap', 'circle', 'dumbbell', 'activity'],
             default: 'circle',
         },
         isGlobal: { type: Boolean, default: true },

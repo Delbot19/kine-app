@@ -7,11 +7,15 @@ export interface JwtPayload {
     userId: string
     email: string
     role: string
+    type?: 'auth' | 'setup'
 }
 
-export function generateToken(payload: JwtPayload): string {
+export function generateToken(
+    payload: JwtPayload,
+    expiresIn: string | number = JWT_EXPIRES_IN,
+): string {
     return jwt.sign(payload, JWT_SECRET, {
-        expiresIn: JWT_EXPIRES_IN as jwt.SignOptions['expiresIn'],
+        expiresIn: expiresIn as jwt.SignOptions['expiresIn'],
     })
 }
 

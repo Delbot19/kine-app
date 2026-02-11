@@ -12,10 +12,12 @@ const objectiveSchema = z.object({
 const exerciseInputSchema = z.object({
     exerciseId: z.string().min(1, 'Exercise ID requis'),
     instructions: z.string().optional(),
+    assignedAt: z.coerce.date().optional(),
+    duree: z.number().optional(),
 })
 
 export const createPlanTraitementSchema = z.object({
-    objectifs: z.array(objectiveSchema).min(1, 'Au moins un objectif est requis'),
+    objectifs: z.array(objectiveSchema).optional(),
     duree: z.number().int().positive('Durée (nombre de RDV) requise'),
     suivi: z.string().optional(),
     patientId: z.string().min(1, 'Patient requis'),

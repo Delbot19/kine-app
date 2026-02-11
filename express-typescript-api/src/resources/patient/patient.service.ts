@@ -177,11 +177,31 @@ export default class PatientService {
         return { success: true, message: 'Patient trouvé.', patient }
     }
 
-    async getAllPatients(role: string): Promise<PatientServiceResult> {
-        if (role !== RoleEnum.ADMIN) {
+    async getAllPatients(role: string, userId?: string): Promise<PatientServiceResult> {
+        let filter: any = {}
+
+        if (role === RoleEnum.KINE && userId) {
+            const KineModel = (await import('../../models/kine.model')).default
+            const kine = await KineModel.findOne({ userId })
+            if (kine) {
+                filter = { kineId: kine._id }
+            } else {
+                return { success: false, message: 'Profil kiné introuvable.' }
+            }
+        } else if (role !== RoleEnum.ADMIN) {
             return { success: false, message: 'Accès refusé.' }
         }
-        const patients = await Patient.find().populate('userId')
+
+        const patients = await Patient.find(filter)
+            .populate('userId')
+            .populate({
+                path: 'kineId',
+                populate: {
+                    path: 'userId',
+                    model: 'User',
+                    select: 'nom prenom',
+                },
+            })
         return { success: true, message: 'Liste des patients.', patient: patients }
     }
 

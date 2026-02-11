@@ -20,6 +20,23 @@ class ExerciseService {
     }
 
     /**
+     * Update an exercise
+     */
+    public async updateExercise(
+        id: string,
+        input: Partial<CreateExerciseInput>,
+    ): Promise<IExercise | null> {
+        return await Exercise.findByIdAndUpdate(id, input, { new: true })
+    }
+
+    /**
+     * Delete an exercise
+     */
+    public async deleteExercise(id: string): Promise<IExercise | null> {
+        return await Exercise.findByIdAndDelete(id)
+    }
+
+    /**
      * Get exercises for a patient today, with completion status
      */
     public async getPatientExercisesToday(patientId: string): Promise<any[]> {
@@ -50,6 +67,31 @@ class ExerciseService {
                 // If exercise was deleted or null, handle gracefully
                 if (!exercise) return null
 
+                // Calculate expiration date
+                const assignedAt = new Date(item.assignedAt || activePlan.createdAt) // Fallback to plan creation if missing
+                const durationDays = Number(item.duree || activePlan.duree || 7)
+
+                // Add duration to assigned date
+                const expirationDate = new Date(assignedAt)
+                expirationDate.setDate(expirationDate.getDate() + durationDays)
+
+                // Check if expired (today > expirationDate)
+                // We compare against end of today to be inclusive? Or start of today?
+                // User said "au bout du nombre de jours". Usually implies inclusive.
+                // If assigned today (Day 1) for 3 days -> Day 1, 2, 3. Expire on Day 4.
+                // So if today > expirationDate, it's expired.
+                // Let's use startOfDay for comparison to safely ignore time components.
+                const today = startOfDay(new Date())
+                // expirationDate should be set to endOfDay of that last day maybe?
+                // Simpler: assignedAt (timestamp) + days * 24h.
+                // If today is AFTER that window.
+
+                // Let's stick to safe day comparison
+                // If today is strictly after the expiration date (calculated as assigned + duration).
+                if (today > expirationDate) {
+                    return null
+                }
+
                 const log = logs.find((l: any) => String(l.exerciseId) === String(exercise._id))
 
                 return {
@@ -62,6 +104,10 @@ class ExerciseService {
                     icon: exercise.icon,
                     completed: log ? log.completed : false,
                     instructions: item.instructions, // Personal instructions from Plan
+                    assignedAt: item.assignedAt,
+                    daysLeft: Math.ceil(
+                        (expirationDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24),
+                    ),
                 }
             })
             .filter((e) => e !== null)
@@ -98,13 +144,19 @@ class ExerciseService {
                 exerciseId,
                 date: todayStart,
             },
-            {
-                completed,
-                // We will merge other fields in next step or use object spread if I change signature now
-            },
+            updateData,
             { new: true, upsert: true },
         )
         return log
+    }
+
+    /**
+     * Get exercise logs for a specific patient (Kiné view)
+     */
+    public async getExerciseLogsByPatient(patientId: string): Promise<any[]> {
+        return await ExerciseLog.find({ patientId })
+            .populate('exerciseId', 'title description icon')
+            .sort({ date: -1 })
     }
 }
 

@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_BASE_URL = 'http://localhost:8000/api';
+import { API_BASE_URL } from '@/config';
 
 export interface Exercise {
   id: string;
@@ -9,7 +9,7 @@ export interface Exercise {
   duration: string;
   tip: string;
   difficulty: "Facile" | "Modéré" | "Difficile";
-  icon: "target" | "refresh" | "zap" | "circle";
+  icon: "target" | "refresh" | "zap" | "circle" | "dumbbell" | "activity";
   completed: boolean;
   instructions?: string;
 }

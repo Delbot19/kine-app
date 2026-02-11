@@ -22,8 +22,9 @@ const PendingAppointmentItem = ({
   onConfirm
 }: PendingAppointmentItemProps) => {
   const rdvDate = new Date(date);
-  const formattedDate = format(rdvDate, "d MMMM", { locale: fr });
-  const formattedTime = format(rdvDate, "HH:mm");
+  const isValidDate = !isNaN(rdvDate.getTime());
+  const formattedDate = isValidDate ? format(rdvDate, "d MMMM", { locale: fr }) : "Date invalide";
+  const formattedTime = isValidDate ? format(rdvDate, "HH:mm") : "--:--";
 
   return (
     <div className="flex items-center justify-between p-4 bg-orange-50 border border-orange-100 rounded-lg mb-3">

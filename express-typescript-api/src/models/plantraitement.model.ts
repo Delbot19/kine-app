@@ -18,6 +18,8 @@ export interface IPlanTraitement extends Document {
     exercises: Array<{
         exerciseId: Schema.Types.ObjectId
         instructions?: string
+        assignedAt: Date
+        duree: number
     }>
     statut: 'en cours' | 'terminé' | 'archivé'
     createdAt: Date
@@ -51,6 +53,8 @@ const planTraitementSchema = new Schema<IPlanTraitement>(
             {
                 exerciseId: { type: Schema.Types.ObjectId, ref: 'Exercise' },
                 instructions: { type: String },
+                assignedAt: { type: Date, default: Date.now },
+                duree: { type: Number, default: 7 }, // Duration in days
             },
         ],
         statut: {

@@ -5,12 +5,16 @@ export interface CreateKineInput {
     specialite: string
     numeroRPPS: string
     presentation?: string
+    telephone?: string
+    adresse?: string
 }
 
 export interface UpdateKineInput {
     specialite?: string
     numeroRPPS?: string
     presentation?: string
+    telephone?: string
+    adresse?: string
 }
 
 export interface RegisterKineInput {
@@ -21,4 +25,6 @@ export interface RegisterKineInput {
     specialite: string
     numeroRPPS: string
     presentation?: string
+    telephone?: string
+    adresse?: string
 }

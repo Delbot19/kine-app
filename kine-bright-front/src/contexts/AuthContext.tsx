@@ -2,8 +2,8 @@ import React, { createContext, useContext, useState, useCallback, ReactNode } fr
 import axios from "axios";
 import { useToast } from "@/hooks/use-toast";
 import { handleAxiosError } from "@/utils/handleAxiosError";
+import { API_BASE_URL } from "@/config";
 
-const API_BASE_URL = "http://localhost:8000/api";
 
 export interface LoginRequest {
   email: string;

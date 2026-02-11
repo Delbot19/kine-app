@@ -84,6 +84,38 @@ export default class KineService {
         return { success: true, message: 'Kiné et utilisateur supprimés.' }
     }
 
+    async toggleKineStatus(
+        kineId: string | Types.ObjectId,
+        role: string,
+    ): Promise<KineServiceResult> {
+        if (role !== RoleEnum.ADMIN) {
+            return { success: false, message: 'Accès refusé.' }
+        }
+
+        let kine = await Kine.findById(kineId).populate('userId')
+        if (!kine && typeof kineId === 'string' && kineId.length === 24) {
+            kine = await Kine.findOne({ userId: kineId }).populate('userId')
+        }
+
+        if (!kine) {
+            return { success: false, message: 'Kiné non trouvé.' }
+        }
+
+        const user = kine.userId as any
+        if (!user?._id) {
+            return { success: false, message: 'Utilisateur associé introuvable.' }
+        }
+
+        // Toggle status
+        const newStatus = !user.actif
+        await User.findByIdAndUpdate(user._id, { actif: newStatus })
+
+        // Return updated kine
+        kine = await Kine.findById(kine._id).populate('userId')
+
+        return { success: true, message: `Kiné ${newStatus ? 'activé' : 'désactivé'}.`, kine }
+    }
+
     async getKineByUserId(
         userId: string,
         requesterId: string,

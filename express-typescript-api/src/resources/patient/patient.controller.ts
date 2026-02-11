@@ -148,7 +148,8 @@ class PatientController {
     ): Promise<Response | void> => {
         try {
             const role = (req as any).user?.role
-            const result = await this.patientService.getAllPatients(role)
+            const userId = (req as any).user?.userId || (req as any).user?._id
+            const result = await this.patientService.getAllPatients(role, userId)
             if (result.success) {
                 return res
                     .status(200)

@@ -10,7 +10,7 @@ import { format, differenceInWeeks, isPast, isFuture } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { Button } from "@/components/ui/button";
 
-const API_BASE_URL = 'http://localhost:8000/api';
+import { API_BASE_URL } from '@/config';
 
 const TreatmentPage = () => {
   const { user } = useAuth();

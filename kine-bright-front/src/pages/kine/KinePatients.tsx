@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { Search, Filter, Plus, Loader2 } from 'lucide-react';
@@ -26,7 +27,7 @@ import {
 } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 
-const API_BASE_URL = 'http://localhost:8000/api';
+import { API_BASE_URL } from '@/config';
 
 type PatientStatus = 'actif' | 'en_pause' | 'termine';
 type FilterType = 'all' | PatientStatus;
@@ -51,6 +52,7 @@ interface Patient {
 const KinePatients = () => {
   const { user } = useAuth();
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [patients, setPatients] = useState<Patient[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -275,7 +277,7 @@ const KinePatients = () => {
               lastAppointment={patient.lastAppointment}
               nextAppointment={patient.nextAppointment}
 
-              onView={() => console.log('View', patient._id)}
+              onView={() => navigate(`/kine/traitements?patientId=${patient._id}`)}
               onEdit={() => setEditingPatient(patient)}
             />
           ))

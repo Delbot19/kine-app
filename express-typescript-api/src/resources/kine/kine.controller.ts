@@ -22,6 +22,7 @@ class KineController {
         this.router.get('/:id', authMiddleware, this.getKineById)
         this.router.put('/:id', authMiddleware, zodValidator(updateKineSchema), this.updateKine)
         this.router.delete('/:id', authMiddleware, this.deleteKine)
+        this.router.patch('/:id/toggle-status', authMiddleware, this.toggleKineStatus)
     }
 
     private readonly getKineById = async (
@@ -88,6 +89,28 @@ class KineController {
                         result,
                     ),
                 )
+        } catch (error) {
+            next(error)
+        }
+    }
+
+    private readonly toggleKineStatus = async (
+        req: Request,
+        res: Response,
+        next: NextFunction,
+    ): Promise<Response | void> => {
+        try {
+            const { id } = req.params
+            const role = (req as any).user?.role
+            const result = await this.kineService.toggleKineStatus(id, role)
+            if (result.success) {
+                return res
+                    .status(200)
+                    .json(jsonResponse(result.message ?? 'Statut kiné modifié', true, result.kine))
+            }
+            return res
+                .status(403)
+                .json(jsonResponse(result.message ?? 'Accès refusé', false, result))
         } catch (error) {
             next(error)
         }

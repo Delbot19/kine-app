@@ -19,7 +19,7 @@ const exerciseLogSchema = new Schema<IExerciseLog>(
         exerciseId: { type: Schema.Types.ObjectId, ref: 'Exercise', required: true },
         date: { type: Date, required: true },
         completed: { type: Boolean, default: false },
-        douleur: { type: Number, min: 0, max: 10 },
+        douleur: { type: Number, min: 1, max: 5 },
         difficulte: { type: String, enum: ['Facile', 'Moyen', 'Difficile', 'Impossible'] },
         ressenti: { type: String },
         modifications: { type: String },

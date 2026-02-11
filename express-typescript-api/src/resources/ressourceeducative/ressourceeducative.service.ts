@@ -15,7 +15,23 @@ export default class RessourceEducativeService {
     async createRessourceEducative(
         input: CreateRessourceEducativeInput,
     ): Promise<RessourceEducativeServiceResult> {
-        const ressource = await RessourceEducative.create(input)
+        // Generate basic slug
+        const baseSlug =
+            input.titre
+                .toLowerCase()
+                .replace(/[^a-z0-9]+/g, '-')
+                .replace(/(^-|-$)+/g, '') || 'ressource'
+
+        // Ensure uniqueness
+        let uniqueSlug = baseSlug
+        let counter = 1
+        // eslint-disable-next-line no-await-in-loop
+        while (await RessourceEducative.findOne({ slug: uniqueSlug })) {
+            uniqueSlug = `${baseSlug}-${counter}`
+            counter += 1
+        }
+
+        const ressource = await RessourceEducative.create({ ...input, slug: uniqueSlug })
         return { success: true, ressource }
     }
 

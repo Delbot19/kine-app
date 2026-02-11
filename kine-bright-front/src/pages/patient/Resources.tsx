@@ -52,7 +52,13 @@ const ResourcesPage = () => {
   // Filter resources into categories
   const allArticles = filteredResources
     .filter(r => r.type === 'article')
-    .sort((a, b) => new Date(b.datePublication).getTime() - new Date(a.datePublication).getTime());
+    .sort((a, b) => {
+      // Prioritize featured articles
+      if (a.misEnAvant && !b.misEnAvant) return -1;
+      if (!a.misEnAvant && b.misEnAvant) return 1;
+      // Then sort by date
+      return new Date(b.datePublication).getTime() - new Date(a.datePublication).getTime();
+    });
 
   const featuredArticle = allArticles[0];
   const articlesArticles = allArticles.slice(1);

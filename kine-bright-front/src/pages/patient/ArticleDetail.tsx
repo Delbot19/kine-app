@@ -4,6 +4,8 @@ import { Link, useParams } from "react-router-dom";
 import { resourceService } from '@/api/resource.service';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
+import Markdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 const ArticleDetail = () => {
   const { id } = useParams<{ id: string }>();
@@ -60,17 +62,7 @@ const ArticleDetail = () => {
     );
   }
 
-  // Parse sections if content is stored as JSON string, otherwise treat as simple string
-  // For compatibility with the simple string model we have:
-  const isRichContent = (article.contenu || '').includes('"sections":');
-  // Ideally, we'd update the backend to store structured data, but for now we might parse or just show text.
-  // Wait, the reference `ArticleDetail` expects `sections` array.
-  // User wants "content like this article".
-  // I will assume for the Seeded data, I will put JSON in the content field or simple text?
-  // Let's support simple string with newlines for now to match current model, 
-  // OR update the component to split by double newline like the reference does for "Scraping" text if it's a single block.
 
-  const contentParagraphs = (article.contenu || '').split('\n\n');
 
   return (
     <>
@@ -120,17 +112,9 @@ const ArticleDetail = () => {
 
           {/* Article Content */}
           <article className="prose prose-lg prose-slate max-w-none dark:prose-invert">
-            {contentParagraphs.map((paragraph: string, index: number) => {
-              // Simple header detection style for now
-              if (paragraph.startsWith('# ')) {
-                return <h2 key={index} className="text-2xl font-bold text-pink-600 mt-8 mb-4">{paragraph.replace('# ', '')}</h2>
-              }
-              return (
-                <p key={index} className="text-foreground/90 leading-relaxed mb-6 text-lg">
-                  {paragraph}
-                </p>
-              )
-            })}
+            <Markdown remarkPlugins={[remarkGfm]}>
+              {article.contenu}
+            </Markdown>
           </article>
 
           {/* Tags */}

@@ -25,7 +25,9 @@ export default function LoginPage() {
     });
 
     if (result.success && result.user) {
-      if (result.user.role === 'kinesitherapeute' || result.user.role === 'kine') {
+      if (result.user.role === 'admin') {
+        navigate('/admin/dashboard');
+      } else if (result.user.role === 'kinesitherapeute' || result.user.role === 'kine') {
         navigate('/kine/dashboard');
       } else {
         navigate('/dashboard');
@@ -147,12 +149,12 @@ export default function LoginPage() {
                       Se souvenir de moi
                     </Label>
                   </div>
-                  <a
-                    href="#"
+                  <Link
+                    to="/forgot-password"
                     className="text-sm text-primary hover:text-primary-glow transition-colors"
                   >
                     Mot de passe oublié ?
-                  </a>
+                  </Link>
                 </div>
 
                 <Button

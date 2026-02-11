@@ -10,7 +10,7 @@ import PatientProgressItem from '@/components/kine/PatientProgressItem';
 import { useAuth } from '@/contexts/AuthContext';
 import axios from 'axios';
 
-const API_BASE_URL = 'http://localhost:8000/api';
+import { API_BASE_URL } from '@/config';
 
 const KineDashboard = () => {
   const { user } = useAuth();
@@ -25,20 +25,33 @@ const KineDashboard = () => {
   const currentTime = format(today, "HH:mm");
 
   useEffect(() => {
-    const fetchData = async () => {
-      if (!user) return;
+    const fetchData = async (isBackground = false) => {
+      const userId = user?.id || (user as any)?._id;
+      if (!userId) return;
+
+      // Only show spinner on first load
+      // if (!isBackground) setLoading(true); // Already initialized to true
 
       try {
         const token = localStorage.getItem('authToken');
         const config = { headers: { Authorization: `Bearer ${token}` } };
 
-        // 1. Run cleanup first
-        await axios.post(`${API_BASE_URL}/rdvs/cleanup`, {}, config);
+        // 1. Run cleanup (Non-blocking)
+        try {
+          await axios.post(`${API_BASE_URL}/rdvs/cleanup`, {}, config);
+        } catch (e) {
+          console.warn("Cleanup failed, continuing...", e);
+        }
 
         // 2. Get Kine Profile
-        const userId = user.id || (user as any)._id;
         const kineRes = await axios.get(`${API_BASE_URL}/kines/by-user/${userId}`, config);
         const kineData = kineRes.data.data;
+
+        if (!kineData) {
+          console.error("Kine profile not found");
+          return;
+        }
+
         setKine(kineData);
 
         // 2. Get Today's Appointments
@@ -75,16 +88,17 @@ const KineDashboard = () => {
       } catch (error) {
         console.error("Error fetching dashboard data:", error);
       } finally {
-        setLoading(false);
+        if (!isBackground) setLoading(false);
       }
     };
 
     fetchData();
 
     // Auto-refresh every 30 seconds
-    const intervalId = setInterval(fetchData, 30000);
+    const intervalId = setInterval(() => fetchData(true), 30000);
     return () => clearInterval(intervalId);
-  }, [user]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id, (user as any)?._id]);
 
   if (loading) {
     return (
@@ -233,14 +247,26 @@ const KineDashboard = () => {
               const patientUser = appointment.patientId?.userId || {};
               const name = patientUser.nom ? `${patientUser.prenom} ${patientUser.nom}` : "Patient Inconnu";
               const initials = patientUser.prenom ? `${patientUser.prenom[0]}${patientUser.nom[0]}`.toUpperCase() : "??";
-              const time = format(new Date(appointment.date), 'HH:mm');
+
+              const dateObj = new Date(appointment.date);
+              const time = !isNaN(dateObj.getTime()) ? format(dateObj, 'HH:mm') : '--:--';
+
+              // Handle motif (string or object)
+              let motifDisplay = "Consultation";
+              if (appointment.motif) {
+                if (typeof appointment.motif === 'string') {
+                  motifDisplay = appointment.motif;
+                } else if (typeof appointment.motif === 'object' && appointment.motif.titre) {
+                  motifDisplay = appointment.motif.titre;
+                }
+              }
 
               return (
                 <AppointmentItem
                   key={appointment._id}
                   initials={initials}
                   name={name}
-                  treatment={appointment.motif || "Consultation"}
+                  treatment={motifDisplay}
                   time={time}
                   isCompleted={appointment.statut === 'terminé'}
                   onComplete={() => handleCompleteAppointment(appointment._id)}

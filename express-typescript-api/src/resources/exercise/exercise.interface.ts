@@ -2,9 +2,10 @@ export interface CreateExerciseInput {
     title: string
     description: string
     duration: string
+    category: string
     tip?: string
     difficulty: 'Facile' | 'Modéré' | 'Difficile'
-    icon?: 'target' | 'refresh' | 'zap' | 'circle'
+    icon?: 'target' | 'refresh' | 'zap' | 'circle' | 'dumbbell' | 'activity'
     isGlobal?: boolean
 }
 

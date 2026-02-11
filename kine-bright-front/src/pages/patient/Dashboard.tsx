@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -20,6 +20,12 @@ import {
   AlertCircle,
   Loader2
 } from 'lucide-react';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { useAuth } from '@/contexts/AuthContext';
 import axios from 'axios';
 import { useToast } from '@/hooks/use-toast';
@@ -27,7 +33,7 @@ import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 
-const API_BASE_URL = 'http://localhost:8000/api';
+import { API_BASE_URL } from '@/config';
 
 interface Patient {
   _id: string;
@@ -35,6 +41,7 @@ interface Patient {
   adresse: string;
   dateNaissance: string;
   groupeSanguin?: string;
+  kineId?: string; // Add kineId
 }
 
 interface Appointment {
@@ -56,6 +63,7 @@ interface Appointment {
 const PatientDashboard = () => {
   const { user } = useAuth();
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   // États pour la gestion des données
   const [appointments, setAppointments] = useState<Appointment[]>([]);
@@ -73,7 +81,7 @@ const PatientDashboard = () => {
   // Chargement des données réelles
   const loadData = async (isBackground = false) => {
     if (!user) {
-      setIsLoading(false);
+      navigate('/login');
       return;
     }
 
@@ -261,7 +269,31 @@ const PatientDashboard = () => {
 
         {/* Actions rapides avec effet Glassmorphism */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          {appointments.length === 0 ? (
+
+          {/* Nouveau RDV Button Logic */}
+
+          {patient?.kineId ? (
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div className="cursor-not-allowed">
+                    <Card className="bg-slate-100 border-white/20 opacity-60">
+                      <CardContent className="p-6 text-center space-y-3">
+                        <div className="w-12 h-12 bg-slate-200 rounded-full flex items-center justify-center mx-auto">
+                          <Plus className="h-6 w-6 text-slate-400" />
+                        </div>
+                        <h3 className="font-semibold text-slate-600">Nouveau RDV</h3>
+                        <p className="text-sm text-slate-500">Prendre un nouveau rendez-vous</p>
+                      </CardContent>
+                    </Card>
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Vous avez déjà un kiné assigné. Veuillez le contacter directement.</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          ) : appointments.length === 0 ? (
             <Link to="/appointments">
               <Card className="cursor-pointer transition-all duration-300 group bg-white/40 backdrop-blur-md border-white/20 hover:bg-white/60 hover:shadow-medical hover:-translate-y-1">
                 <CardContent className="p-6 text-center space-y-3">
