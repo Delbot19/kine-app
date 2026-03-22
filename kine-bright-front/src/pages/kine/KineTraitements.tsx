@@ -751,67 +751,91 @@ const KineTraitements = () => {
                 <Dumbbell className="h-5 w-5 text-primary" />
                 <h2 className="text-lg font-semibold">Exercices Prescrits</h2>
               </div>
-              {(!activePlan || !activePlan.exercises || activePlan.exercises.length === 0) && (
-                <Button onClick={() => navigate(`/kine/prescriptions?patientId=${selectedPatientId}`)} className="gap-2">
-                  <Plus className="h-4 w-4" />
-                  Ajouter des exercices
-                </Button>
-              )}
+              {(() => {
+                const activeExercises = activePlan && activePlan.exercises ? activePlan.exercises.filter((ex: any) => {
+                  const assignedDate = new Date(ex.assignedAt || activePlan.createdAt);
+                  const durationDays = ex.duree || activePlan.duree || 3;
+                  const expirationDate = new Date(assignedDate);
+                  expirationDate.setDate(expirationDate.getDate() + durationDays);
+                  return new Date().setHours(0, 0, 0, 0) <= expirationDate.getTime();
+                }) : [];
+                return activeExercises.length === 0 && (
+                  <Button onClick={() => navigate(`/kine/prescriptions?patientId=${selectedPatientId}`)} className="gap-2">
+                    <Plus className="h-4 w-4" />
+                    Ajouter des exercices
+                  </Button>
+                );
+              })()}
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {activePlan && activePlan.exercises && activePlan.exercises.length > 0 ? (
-                activePlan.exercises.map((ex: any, i: number) => (
-                  <Card key={i} className="relative group overflow-hidden">
-                    <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity z-10">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-7 w-7 bg-white/80 hover:bg-red-50 hover:text-red-600 shadow-sm"
-                        onClick={() => handleDeleteExercise(i)}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                    <CardContent className="p-4 flex gap-4">
-                      <div className="h-16 w-16 bg-slate-100 rounded-md flex items-center justify-center shrink-0 overflow-hidden">
-                        {ex.exerciseId && ex.exerciseId.image ? (
-                          <img src={ex.exerciseId.image} alt={ex.exerciseId.title} className="h-full w-full object-cover" />
-                        ) : (
-                          <Dumbbell className="h-8 w-8 text-slate-300" />
-                        )}
+              {(() => {
+                const activeExercisesWithIndex = activePlan && activePlan.exercises 
+                  ? activePlan.exercises.map((ex: any, i: number) => ({ ex, originalIndex: i }))
+                      .filter(({ ex }: any) => {
+                        const assignedDate = new Date(ex.assignedAt || activePlan.createdAt);
+                        const durationDays = ex.duree || activePlan.duree || 3;
+                        const expirationDate = new Date(assignedDate);
+                        expirationDate.setDate(expirationDate.getDate() + durationDays);
+                        return new Date().setHours(0, 0, 0, 0) <= expirationDate.getTime();
+                      })
+                  : [];
+
+                if (activeExercisesWithIndex.length > 0) {
+                  return activeExercisesWithIndex.map(({ ex, originalIndex }: any) => (
+                    <Card key={originalIndex} className="relative group overflow-hidden">
+                      <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity z-10">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-7 w-7 bg-white/80 hover:bg-red-50 hover:text-red-600 shadow-sm"
+                          onClick={() => handleDeleteExercise(originalIndex)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
                       </div>
-                      <div className="flex-1 min-w-0">
-                        <h4 className="font-medium text-sm truncate" title={ex.exerciseId?.title}>
-                          {ex.exerciseId?.title || "Exercice Inconnu"}
-                        </h4>
-                        <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
-                          {ex.instructions || "Aucune consigne spécifique."}
-                        </p>
-                        <div className="flex items-center gap-2 mt-2">
-                          <Badge variant="outline" className="text-[10px] h-5">
-                            {ex.duree || 3} jours
-                          </Badge>
-                          <Badge variant="secondary" className="text-[10px] h-5">
-                            {ex.exerciseId?.category || "Général"}
-                          </Badge>
+                      <CardContent className="p-4 flex gap-4">
+                        <div className="h-16 w-16 bg-slate-100 rounded-md flex items-center justify-center shrink-0 overflow-hidden">
+                          {ex.exerciseId && ex.exerciseId.image ? (
+                            <img src={ex.exerciseId.image} alt={ex.exerciseId.title} className="h-full w-full object-cover" />
+                          ) : (
+                            <Dumbbell className="h-8 w-8 text-slate-300" />
+                          )}
                         </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))
-              ) : (
-                <div className="col-span-full text-center py-8 border-2 border-dashed rounded-lg bg-slate-50/50">
-                  <p className="text-muted-foreground mb-4">Aucun exercice prescrit dans ce plan.</p>
-                  {activePlan ? (
-                    <Button variant="outline" onClick={() => navigate(`/kine/prescriptions?patientId=${selectedPatientId}`)}>
-                      Ajouter des exercices
-                    </Button>
-                  ) : (
-                    <p className="text-sm text-muted-foreground">Créez un plan de traitement pour commencer.</p>
-                  )}
-                </div>
-              )}
+                        <div className="flex-1 min-w-0">
+                          <h4 className="font-medium text-sm truncate" title={ex.exerciseId?.title}>
+                            {ex.exerciseId?.title || "Exercice Inconnu"}
+                          </h4>
+                          <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
+                            {ex.instructions || "Aucune consigne spécifique."}
+                          </p>
+                          <div className="flex items-center gap-2 mt-2">
+                            <Badge variant="outline" className="text-[10px] h-5">
+                              {ex.duree || 3} jours
+                            </Badge>
+                            <Badge variant="secondary" className="text-[10px] h-5">
+                              {ex.exerciseId?.category || "Général"}
+                            </Badge>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ));
+                } else {
+                  return (
+                    <div className="col-span-full text-center py-8 border-2 border-dashed rounded-lg bg-slate-50/50">
+                      <p className="text-muted-foreground mb-4">Aucun exercice prescrit dans ce plan.</p>
+                      {activePlan ? (
+                        <Button variant="outline" onClick={() => navigate(`/kine/prescriptions?patientId=${selectedPatientId}`)}>
+                          Ajouter des exercices
+                        </Button>
+                      ) : (
+                        <p className="text-sm text-muted-foreground">Créez un plan de traitement pour commencer.</p>
+                      )}
+                    </div>
+                  );
+                }
+              })()}
             </div>
           </div>
 

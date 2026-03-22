@@ -197,26 +197,20 @@ const KinePrescription = () => {
   const isExerciseActive = (exerciseId: string) => {
     if (!activePlan || !activePlan.exercises) return false;
 
-    // Find exercise in plan
-    const planEx = activePlan.exercises.find((e: any) =>
+    const planExercises = activePlan.exercises.filter((e: any) =>
       (e.exerciseId?._id === exerciseId) || (e.exerciseId === exerciseId)
     );
 
-    if (!planEx) return false;
+    if (planExercises.length === 0) return false;
+    const todayMs = new Date().setHours(0, 0, 0, 0);
 
-    // Check expiration
-    // Fallback to plan creation date if assignedAt is missing (backward compatibility)
-    const assignedDate = new Date(planEx.assignedAt || activePlan.createdAt);
-    const durationDays = planEx.duree || activePlan.duree || 3;
-
-    const expirationDate = new Date(assignedDate);
-    expirationDate.setDate(expirationDate.getDate() + durationDays);
-
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-
-    // If today is <= expirationDate, it is ACTIVE.
-    return today.getTime() <= expirationDate.getTime();
+    return planExercises.some((planEx: any) => {
+      const assignedDate = new Date(planEx.assignedAt || activePlan.createdAt);
+      const durationDays = planEx.duree || activePlan.duree || 3;
+      const expirationDate = new Date(assignedDate);
+      expirationDate.setDate(expirationDate.getDate() + durationDays);
+      return todayMs <= expirationDate.getTime();
+    });
   };
 
   const handleCreate = async () => {
@@ -238,7 +232,13 @@ const KinePrescription = () => {
     }
 
     // Check overload
-    const activeCount = activePlan?.exercises?.filter((e: any) => isExerciseActive(e.exerciseId?._id || e.exerciseId)).length || 0;
+    const activeCount = activePlan?.exercises?.filter((planEx: any) => {
+      const assignedDate = new Date(planEx.assignedAt || activePlan.createdAt);
+      const durationDays = planEx.duree || activePlan.duree || 3;
+      const expirationDate = new Date(assignedDate);
+      expirationDate.setDate(expirationDate.getDate() + durationDays);
+      return new Date().setHours(0, 0, 0, 0) <= expirationDate.getTime();
+    }).length || 0;
     const newCount = selectedExercises.length;
 
     if (activeCount + newCount > 5) {
@@ -436,7 +436,13 @@ const KinePrescription = () => {
 
                   {/* Overload Warning */}
                   {(() => {
-                    const activeCount = activePlan?.exercises?.length || 0;
+                    const activeCount = activePlan?.exercises?.filter((planEx: any) => {
+                      const assignedDate = new Date(planEx.assignedAt || activePlan.createdAt);
+                      const durationDays = planEx.duree || activePlan.duree || 3;
+                      const expirationDate = new Date(assignedDate);
+                      expirationDate.setDate(expirationDate.getDate() + durationDays);
+                      return new Date().setHours(0, 0, 0, 0) <= expirationDate.getTime();
+                    }).length || 0;
                     const newCount = selectedExercises.length;
                     const total = activeCount + newCount;
 
