@@ -53,7 +53,7 @@ export default function LoginPage() {
               <div className="p-3 bg-white/20 rounded-full backdrop-blur-sm">
                 <Heart className="h-8 w-8" />
               </div>
-              <h1 className="text-4xl font-bold">PhysioCenter</h1>
+              <h1 className="text-4xl font-bold">KinéCare</h1>
             </div>
             <p className="text-xl opacity-90 mb-8">
               Votre partenaire de confiance pour une rééducation moderne et personnalisée
@@ -101,7 +101,7 @@ export default function LoginPage() {
           <div className="lg:hidden text-center mb-8">
             <div className="flex items-center justify-center gap-2 mb-4">
               <Heart className="h-8 w-8 text-primary" />
-              <h1 className="text-2xl font-bold text-foreground">PhysioCenter</h1>
+              <h1 className="text-2xl font-bold text-foreground">KinéCare</h1>
             </div>
           </div>
 
@@ -177,7 +177,7 @@ export default function LoginPage() {
 
           {/* Footer */}
           <div className="mt-8 text-center text-xs text-muted-foreground">
-            <p>© 2024 PhysioCenter. Tous droits réservés.</p>
+            <p>© 2024 KinéCare. Tous droits réservés.</p>
             <p className="mt-1">
               <a href="#" className="hover:text-primary transition-colors">Confidentialité</a>
               {' • '}

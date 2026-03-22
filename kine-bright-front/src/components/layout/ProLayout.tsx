@@ -12,7 +12,7 @@ const ProLayout = () => {
     <div className="min-h-screen bg-gray-50 flex flex-col lg:flex-row">
       {/* Mobile Header */}
       <div className="lg:hidden flex items-center justify-between p-4 bg-white border-b border-gray-200">
-        <h1 className="text-lg font-bold text-[#1e3a5f]">PhysioCenter</h1>
+        <h1 className="text-lg font-bold text-[#1e3a5f]">KinéCare</h1>
         <Sheet open={open} onOpenChange={setOpen}>
           <SheetTrigger asChild>
             <Button variant="ghost" size="icon">

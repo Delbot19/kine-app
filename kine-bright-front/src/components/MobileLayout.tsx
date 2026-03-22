@@ -29,7 +29,7 @@ const MobileLayout = ({ children }: MobileLayoutProps) => {
         <div className="px-4 py-3 flex justify-between items-center">
           <div className="flex items-center space-x-2">
             <Heart className="h-6 w-6 text-primary" />
-            <h1 className="text-lg font-bold text-foreground">PhysioCenter</h1>
+            <h1 className="text-lg font-bold text-foreground">KinéCare</h1>
           </div>
           <Button variant="ghost" size="sm" onClick={logout}>
             Déconnexion

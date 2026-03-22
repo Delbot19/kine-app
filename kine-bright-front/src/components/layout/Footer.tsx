@@ -15,7 +15,7 @@ const Footer = () => {
               <div className="flex items-center justify-center w-8 h-8 bg-gradient-primary rounded-full">
                 <Heart className="h-5 w-5 text-primary-foreground" />
               </div>
-              <h3 className="text-lg font-bold text-foreground">PhysioCenter</h3>
+              <h3 className="text-lg font-bold text-foreground">KinéCare</h3>
             </div>
             <p className="text-sm text-muted-foreground">
               Votre centre de kinésithérapie de confiance.
@@ -103,7 +103,7 @@ const Footer = () => {
               </div>
               <div className="flex items-center space-x-2 text-muted-foreground">
                 <Mail className="h-4 w-4" />
-                <span>contact@physiocenter.fr</span>
+                <span>contact@kinecare.fr</span>
               </div>
               <div className="flex items-start space-x-2 text-muted-foreground">
                 <MapPin className="h-4 w-4 mt-0.5" />
@@ -145,7 +145,7 @@ const Footer = () => {
         <div className="border-t border-border pt-8 mt-8">
           <div className="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
             <p className="text-sm text-muted-foreground">
-              © {currentYear} PhysioCenter. Tous droits réservés.
+              © {currentYear} KinéCare. Tous droits réservés.
             </p>
             <p className="text-sm text-muted-foreground">
               Développé avec ❤️ pour votre bien-être

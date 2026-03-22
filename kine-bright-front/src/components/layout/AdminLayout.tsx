@@ -30,7 +30,7 @@ const AdminSidebar = ({ className }: { className?: string }) => {
       {/* Logo */}
       <div className="p-6 border-b border-gray-100">
         <h1 className="text-xl font-bold text-[#1e3a5f]">Admin Panel</h1>
-        <p className="text-sm text-muted-foreground">Cabinet PhysioCenter</p>
+        <p className="text-sm text-muted-foreground">Cabinet KinéCare</p>
       </div>
 
       {/* Navigation */}

@@ -84,7 +84,7 @@ const KinePrescription = () => {
 
   const [selectedExercises, setSelectedExercises] = useState<SelectedExercise[]>([]);
   const [selectedPatientId, setSelectedPatientId] = useState<string>(searchParams.get('patientId') || '');
-  const [duration, setDuration] = useState('7');
+  const [duration, setDuration] = useState('3');
 
   const [activePlan, setActivePlan] = useState<any>(null);
 
@@ -207,7 +207,7 @@ const KinePrescription = () => {
     // Check expiration
     // Fallback to plan creation date if assignedAt is missing (backward compatibility)
     const assignedDate = new Date(planEx.assignedAt || activePlan.createdAt);
-    const durationDays = planEx.duree || activePlan.duree || 7;
+    const durationDays = planEx.duree || activePlan.duree || 3;
 
     const expirationDate = new Date(assignedDate);
     expirationDate.setDate(expirationDate.getDate() + durationDays);

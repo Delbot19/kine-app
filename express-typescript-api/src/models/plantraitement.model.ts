@@ -54,7 +54,7 @@ const planTraitementSchema = new Schema<IPlanTraitement>(
                 exerciseId: { type: Schema.Types.ObjectId, ref: 'Exercise' },
                 instructions: { type: String },
                 assignedAt: { type: Date, default: Date.now },
-                duree: { type: Number, default: 7 }, // Duration in days
+                duree: { type: Number, default: 3 }, // Duration in days
             },
         ],
         statut: {

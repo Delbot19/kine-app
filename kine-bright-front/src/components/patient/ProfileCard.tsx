@@ -77,7 +77,7 @@ const ProfileCard = ({ patient, onUpdate }: ProfileCardProps) => {
               {patient.prenom} {patient.nom}
             </CardTitle>
             <CardDescription className="text-muted-foreground">
-              Patient PhysioCenter
+              Patient KinéCare
             </CardDescription>
           </div>
         </div>

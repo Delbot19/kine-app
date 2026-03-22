@@ -32,7 +32,7 @@ const AboutPage = () => {
           </div>
           <h2 className="text-3xl font-bold">Notre Mission</h2>
           <p className="text-lg text-muted-foreground leading-relaxed">
-            Chez PhysioCenter, nous croyons que chaque patient mérite un accompagnement personnalisé et continu. Notre mission est de briser les barrières entre les séances en cabinet et le quotidien, grâce à des outils numériques innovants qui prolongent le soin à domicile.
+            Chez KinéCare, nous croyons que chaque patient mérite un accompagnement personnalisé et continu. Notre mission est de briser les barrières entre les séances en cabinet et le quotidien, grâce à des outils numériques innovants qui prolongent le soin à domicile.
           </p>
           <ul className="space-y-3">
             {['Suivi personnalisé', 'Accessibilité 24/7', 'Exercices adaptés'].map((item, index) => (
@@ -109,7 +109,7 @@ const AboutPage = () => {
           <Shield className="w-12 h-12 mx-auto text-primary" />
           <h2 className="text-3xl font-bold">Pourquoi nous choisir ?</h2>
           <p className="text-lg text-muted-foreground">
-            Au-delà des séances, nous vous offrons un véritable écosystème de santé. Avec PhysioCenter, vous devenez acteur de votre rééducation, soutenu par une équipe dévouée et des outils de pointe.
+            Au-delà des séances, nous vous offrons un véritable écosystème de santé. Avec KinéCare, vous devenez acteur de votre rééducation, soutenu par une équipe dévouée et des outils de pointe.
           </p>
         </div>
       </section>

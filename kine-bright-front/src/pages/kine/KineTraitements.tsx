@@ -790,7 +790,7 @@ const KineTraitements = () => {
                         </p>
                         <div className="flex items-center gap-2 mt-2">
                           <Badge variant="outline" className="text-[10px] h-5">
-                            {ex.duree || 7} jours
+                            {ex.duree || 3} jours
                           </Badge>
                           <Badge variant="secondary" className="text-[10px] h-5">
                             {ex.exerciseId?.category || "Général"}

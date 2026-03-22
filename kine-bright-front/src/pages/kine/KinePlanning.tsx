@@ -145,16 +145,26 @@ const KinePlanning = () => {
   const handleNextWeek = () => setCurrentWeekStart(prev => addWeeks(prev, 1));
 
   // Calendar Constraints
+  // Calendar Constraints
   const isSlotDisabled = (time: string, dayIndex: number) => {
     const date = addDays(currentWeekStart, dayIndex);
     const day = date.getDay(); // 0 = Sunday, 6 = Saturday
 
+    // Construct full date for this slot
+    const [hours, minutes] = time.split(':').map(Number);
+    const slotDateTime = new Date(date);
+    slotDateTime.setHours(hours, minutes, 0, 0);
+
+    const now = new Date();
+
     // Disable Sunday completely
     if (day === 0) return true;
 
-    // Disable Saturday AFTER 12:30
+    // Disable past slots (strictly before now)
+    if (slotDateTime < now) return true;
+
+    // Disable Saturday AFTER 12:30 (Legacy logic kept for business rule)
     if (day === 6) {
-      // Time is "HH:MM", string comparison works perfectly: "14:00" > "12:30"
       if (time > "12:30") return true;
     }
 

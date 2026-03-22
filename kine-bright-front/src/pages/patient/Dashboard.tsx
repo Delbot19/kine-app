@@ -120,7 +120,7 @@ const PatientDashboard = () => {
               doctor: rdv.kineId?.userId ? `Dr. ${rdv.kineId.userId.prenom} ${rdv.kineId.userId.nom}` : 'Non assigné',
               kineId: rdv.kineId?._id, // Add kineId for availability check
               specialty: rdv.kineId?.specialite || 'Kinésithérapie',
-              location: 'Cabinet PhysioCenter',
+              location: 'Cabinet KinéCare',
               status: rdv.statut as 'confirmé' | 'en_attente' | 'annulé' | 'à venir' | 'en attente' | 'terminé'
             };
           });
@@ -260,7 +260,7 @@ const PatientDashboard = () => {
             Bonjour {getUserTitle()} {user?.prenom} {user?.nom} ! 👋
           </h1>
           <p className="text-lg text-white/90 max-w-2xl mx-auto">
-            Bienvenue sur votre espace patient PhysioCenter.
+            Bienvenue sur votre espace patient KinéCare.
             Suivez vos rendez-vous, consultez vos exercices et gérez votre traitement en toute simplicité.
           </p>
         </div>
@@ -368,7 +368,7 @@ const PatientDashboard = () => {
                   <Badge variant="secondary">{appointments.length}</Badge>
                 </CardTitle>
                 <CardDescription>
-                  Vos rendez-vous à venir au centre PhysioCenter
+                  Vos rendez-vous à venir au centre KinéCare
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">

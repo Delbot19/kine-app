@@ -30,7 +30,7 @@ contactController.post('/contact', async (req: Request, res: Response, next: Nex
           <p style="white-space: pre-wrap;">${message}</p>
         </div>
         <p style="font-size: 12px; color: #9ca3af; margin-top: 20px;">
-          Ce message a été envoyé via le formulaire de contact de PhysioCenter.
+          Ce message a été envoyé via le formulaire de contact de KinéCare.
         </p>
       </div>
     `
@@ -39,7 +39,7 @@ contactController.post('/contact', async (req: Request, res: Response, next: Nex
         // You typically send TO the clinic email, FROM the user (or system on behalf of user)
         // The "to" address should be configured in env, defaulting to the same as user for testing implies self-sending,
         // but better to hardcode a placeholder or use env variable for ADMIN_EMAIL.
-        const adminEmail = process.env.ADMIN_EMAIL ?? 'admin@physiocenter.fr'
+        const adminEmail = process.env.ADMIN_EMAIL ?? 'admin@kinecare.fr'
 
         const success = await emailService.sendEmail({
             to: adminEmail,

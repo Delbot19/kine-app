@@ -129,7 +129,7 @@ const ContactPage = () => {
                 <div>
                   <h3 className="font-semibold text-foreground mb-1">Email</h3>
                   <p className="text-muted-foreground text-sm">
-                    contact@physiocenter.fr
+                    contact@kinecare.fr
                   </p>
                 </div>
               </div>

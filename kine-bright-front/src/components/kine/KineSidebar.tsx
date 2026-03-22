@@ -29,7 +29,7 @@ const KineSidebar = ({ className }: KineSidebarProps) => {
     <aside className={`w-64 bg-white border-r border-gray-200 min-h-screen flex flex-col h-full overflow-y-auto z-50 ${className || 'fixed left-0 top-0 bottom-0 hidden lg:flex'}`}>
       {/* Logo */}
       <div className="p-6 border-b border-gray-100">
-        <h1 className="text-xl font-bold text-[#1e3a5f]">PhysioCenter</h1>
+        <h1 className="text-xl font-bold text-[#1e3a5f]">KinéCare</h1>
         <p className="text-sm text-muted-foreground">Espace Professionnel</p>
       </div>
 

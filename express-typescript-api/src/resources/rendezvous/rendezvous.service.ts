@@ -47,6 +47,15 @@ export default class RendezVousService {
         }
         // Vérifier horaires d'ouverture
         const debut = new Date(input.date)
+
+        // Prevent past appointments
+        if (debut < new Date()) {
+            return {
+                success: false,
+                message: 'Impossible de prendre un rendez-vous dans le passé.',
+            }
+        }
+
         const fin = new Date(debut.getTime() + (input.duree ?? 30) * 60000)
         const day = debut.getDay()
         const heureDebut = debut.getHours() + debut.getMinutes() / 60

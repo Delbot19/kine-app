@@ -64,11 +64,15 @@ const TreatmentPage = () => {
           const totalEstimated = activePlan.duree || 20; // Default to 20 if missing
           const remainingSessions = Math.max(0, totalEstimated - completed);
           const remainingWeeks = Math.ceil(remainingSessions / 2); // Assuming 2 sessions/week
-          const percent = Math.min(100, Math.round((completed / totalEstimated) * 100));
+          
+          const objectives = activePlan.objectifs || [];
+          const averageProgress = objectives.length > 0
+            ? Math.round(objectives.reduce((sum: number, obj: any) => sum + (obj.progress || 0), 0) / objectives.length)
+            : 0;
 
           setProgressStats([
             { value: `${completed}/${totalEstimated}`, label: "Séances réalisées" },
-            { value: `${percent}%`, label: "Progression moyenne" },
+            { value: `${averageProgress}%`, label: "Progression moyenne" },
             { value: `${remainingWeeks}`, label: "Semaines restantes" },
           ]);
 

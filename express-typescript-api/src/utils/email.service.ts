@@ -40,7 +40,7 @@ export class EmailService {
     async sendEmail(payload: EmailPayload): Promise<boolean> {
         try {
             const info = await this.transporter.sendMail({
-                from: process.env.SMTP_FROM ?? '"PhysioCenter Contact" <no-reply@physiocenter.fr>',
+                from: process.env.SMTP_FROM ?? '"KinéCare Contact" <no-reply@kinecare.fr>',
                 to: payload.to,
                 subject: payload.subject,
                 html: payload.html,

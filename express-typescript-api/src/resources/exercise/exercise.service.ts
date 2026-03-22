@@ -69,7 +69,7 @@ class ExerciseService {
 
                 // Calculate expiration date
                 const assignedAt = new Date(item.assignedAt || activePlan.createdAt) // Fallback to plan creation if missing
-                const durationDays = Number(item.duree || activePlan.duree || 7)
+                const durationDays = Number(item.duree || activePlan.duree || 3)
 
                 // Add duration to assigned date
                 const expirationDate = new Date(assignedAt)
